@@ -1,0 +1,342 @@
+@startuml LAHFIA_DiagrammeClasses
+
+skinparam classAttributeIconSize 0
+skinparam classFontSize 13
+skinparam classHeaderBackgroundColor #EEEDFE
+skinparam classBorderColor #9c9a92
+skinparam classArrowColor #5F5E5A
+skinparam backgroundColor #FAFAF8
+skinparam roundCorner 8
+skinparam linetype ortho
+
+' ═══════════════════════════════════════════════
+' ACTEURS
+' ═══════════════════════════════════════════════
+
+class Patient {
+  + id : UUID
+  + nom : String
+  + prenom : String
+  + telephone : String
+  + email : String
+  + latitude : Double
+  + longitude : Double
+  + createdAt : LocalDateTime
+}
+
+enum Medecin_Specialite {
+  GENERALISTE
+  CARDIOLOGUE
+  DERMATOLOGUE
+  PEDIATRE
+  GYNECOLOGUE
+  OPHTALMOLOGUE
+  ORL
+  PNEUMOLOGUE
+  NEUROLOGUE
+  AUTRE
+}
+
+enum Medecin_Statut {
+  EN_ATTENTE_VALIDATION
+  ACTIF
+  SUSPENDU
+}
+
+class Medecin {
+  + id : UUID
+  + nom : String
+  + prenom : String
+  + telephone : String
+  + email : String
+  + numeroOrdre : String
+  + specialite : Medecin_Specialite
+  + statut : Medecin_Statut
+  + adresseCabinet : String
+  + latitude : Double
+  + longitude : Double
+  + createdAt : LocalDateTime
+}
+
+class DisponibiliteMedecin {
+  + id : UUID
+  + jourSemaine : DayOfWeek
+  + heureDebut : LocalTime
+  + heureFin : LocalTime
+  + actif : Boolean
+}
+
+class IndisponibilitePonctuelle {
+  + id : UUID
+  + dateDebut : LocalDate
+  + dateFin : LocalDate
+  + motif : String
+}
+
+enum Livreur_Statut {
+  EN_ATTENTE_VALIDATION
+  ACTIF
+  SUSPENDU
+}
+
+enum Livreur_TypeAffiliation {
+  INDEPENDANT
+  PARTENAIRE
+}
+
+enum Livreur_DisponibiliteStatut {
+  DISPONIBLE
+  EN_COURSE
+  HORS_LIGNE
+}
+
+class Livreur {
+  + id : UUID
+  + nom : String
+  + prenom : String
+  + telephone : String
+  + email : String
+  + numeroIdentite : String
+  + statut : Livreur_Statut
+  + typeAffiliation : Livreur_TypeAffiliation
+  + disponibiliteStatut : Livreur_DisponibiliteStatut
+  + partenaireLogistiqueId : UUID
+  + latitude : Double
+  + longitude : Double
+  + createdAt : LocalDateTime
+}
+
+class Pharmacie {
+  + id : UUID
+  + nom : String
+  + adresse : String
+  + latitude : Double
+  + longitude : Double
+  + telephone : String
+  + livraisonActive : Boolean
+  + createdAt : LocalDateTime
+}
+
+' ═══════════════════════════════════════════════
+' MÉDICAMENT
+' ═══════════════════════════════════════════════
+
+class Medicament {
+  + id : UUID
+  + nomCommercial : String
+  + nomGenerique : String
+  + dosage : String
+  + forme : String
+}
+
+' ═══════════════════════════════════════════════
+' ORDONNANCE
+' ═══════════════════════════════════════════════
+
+enum Ordonnance_Source {
+  UPLOAD
+  MEDECIN
+}
+
+enum Ordonnance_Statut {
+  EN_ATTENTE_OCR
+  ANALYSEE
+  CORRIGEE
+  NUMERIQUE
+}
+
+class Ordonnance {
+  + id : UUID
+  + imageUrl : String
+  + source : Ordonnance_Source
+  + statut : Ordonnance_Statut
+  + createdAt : LocalDateTime
+}
+
+class OrdonnanceMedicament {
+  + id : UUID
+  + quantite : String
+  + corrigeManuellement : Boolean
+}
+
+class LigneOrdonnance {
+  + id : UUID
+  + quantite : Integer
+  + posologie : String
+  + duree : String
+  + instructions : String
+}
+
+' ═══════════════════════════════════════════════
+' DEMANDE
+' ═══════════════════════════════════════════════
+
+enum Demande_Type {
+  MEDICAMENT
+  ORDONNANCE
+}
+
+enum Demande_Statut {
+  EN_COURS
+  REPONSE_RECUE
+  VALIDEE
+  ANNULEE
+}
+
+class Demande {
+  + id : UUID
+  + type : Demande_Type
+  + statut : Demande_Statut
+  + createdAt : LocalDateTime
+}
+
+enum DemandePharmacieReponse_Reponse {
+  DISPONIBLE
+  NON_DISPONIBLE
+  PARTIEL
+}
+
+class DemandePharmacieReponse {
+  + id : UUID
+  + reponse : DemandePharmacieReponse_Reponse
+  + detailPartiel : String
+  + reponduAt : LocalDateTime
+}
+
+' ═══════════════════════════════════════════════
+' COMMANDE
+' ═══════════════════════════════════════════════
+
+enum Commande_ModeObtention {
+  RETRAIT
+  LIVRAISON
+}
+
+enum Commande_Statut {
+  EN_PREPARATION
+  PRETE
+  EN_LIVRAISON
+  TERMINEE
+  ANNULEE
+}
+
+enum Commande_ModePaiement {
+  A_LA_LIVRAISON
+  EN_LIGNE
+}
+
+class Commande {
+  + id : UUID
+  + modeObtention : Commande_ModeObtention
+  + statut : Commande_Statut
+  + modePaiement : Commande_ModePaiement
+  + createdAt : LocalDateTime
+}
+
+class CommandeMedicament {
+  + id : UUID
+  + quantite : Integer
+  + disponible : Boolean
+}
+
+' ═══════════════════════════════════════════════
+' LIVRAISON
+' ═══════════════════════════════════════════════
+
+enum Livraison_Statut {
+  EN_ATTENTE_LIVREUR
+  ASSIGNEE
+  EN_COURS
+  LIVREE
+  ECHEC
+}
+
+class Livraison {
+  + id : UUID
+  + statut : Livraison_Statut
+  + adresseLivraison : String
+  + noteLivraison : String
+  + assigneeAt : LocalDateTime
+  + priseEnChargeAt : LocalDateTime
+  + livreeAt : LocalDateTime
+  + createdAt : LocalDateTime
+}
+
+' ═══════════════════════════════════════════════
+' NOTIFICATION
+' ═══════════════════════════════════════════════
+
+enum Notification_TypeDestinataire {
+  PATIENT
+  PHARMACIE
+}
+
+enum Notification_TypeEvenement {
+  DEMANDE_ENVOYEE
+  REPONSE_PHARMACIE
+  COMMANDE_VALIDEE
+  COMMANDE_PRETE
+  LIVRAISON_EN_COURS
+  LIVRAISON_TERMINEE
+  RETRAIT_PRET
+}
+
+class Notification {
+  + id : UUID
+  + destinataireId : UUID
+  + typeDestinataire : Notification_TypeDestinataire
+  + typeEvenement : Notification_TypeEvenement
+  + message : String
+  + lue : Boolean
+  + createdAt : LocalDateTime
+}
+
+' ═══════════════════════════════════════════════
+' RELATIONS
+' ═══════════════════════════════════════════════
+
+Patient "1" o-- "0..*" Ordonnance : soumet
+Patient "1" o-- "0..*" Demande : effectue
+
+Medecin "1" o-- "0..*" DisponibiliteMedecin : définit
+Medecin "1" o-- "0..*" IndisponibilitePonctuelle : déclare
+Medecin "1" o-- "0..*" Ordonnance : rédige
+Medecin ..> Medecin_Specialite
+Medecin ..> Medecin_Statut
+
+Livreur "1" o-- "0..*" Livraison : effectue
+Livreur ..> Livreur_Statut
+Livreur ..> Livreur_TypeAffiliation
+Livreur ..> Livreur_DisponibiliteStatut
+
+Pharmacie "1" o-- "0..*" DemandePharmacieReponse : répond
+Pharmacie "1" o-- "0..*" Commande : traite
+
+Ordonnance "1" o-- "0..*" OrdonnanceMedicament : contient (OCR)
+Ordonnance "1" o-- "0..*" LigneOrdonnance : contient (médecin)
+Ordonnance ..> Ordonnance_Source
+Ordonnance ..> Ordonnance_Statut
+
+OrdonnanceMedicament "0..*" --> "1" Medicament
+LigneOrdonnance "0..*" --> "1" Medicament
+CommandeMedicament "0..*" --> "1" Medicament
+
+Demande "0..1" --> "0..1" Ordonnance : basée sur
+Demande "1" o-- "0..*" DemandePharmacieReponse : envoyée à
+Demande "1" o-- "0..1" Commande : aboutit à
+Demande ..> Demande_Type
+Demande ..> Demande_Statut
+
+DemandePharmacieReponse ..> DemandePharmacieReponse_Reponse
+
+Commande "1" o-- "0..*" CommandeMedicament : inclut
+Commande "1" o-- "0..1" Livraison : génère
+Commande ..> Commande_ModeObtention
+Commande ..> Commande_Statut
+Commande ..> Commande_ModePaiement
+
+Livraison ..> Livraison_Statut
+Notification ..> Notification_TypeDestinataire
+Notification ..> Notification_TypeEvenement
+
+@enduml
