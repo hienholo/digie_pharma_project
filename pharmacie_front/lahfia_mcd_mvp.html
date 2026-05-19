@@ -1,0 +1,155 @@
+
+<div id="erd" style="padding: 1rem 0"></div>
+<style>
+#erd svg { width: 100%; }
+</style>
+<script type="module">
+import mermaid from 'https://esm.sh/mermaid@11/dist/mermaid.esm.min.mjs';
+const dark = matchMedia('(prefers-color-scheme: dark)').matches;
+await document.fonts.ready;
+mermaid.initialize({
+  startOnLoad: false,
+  theme: 'base',
+  fontFamily: '"Anthropic Sans", sans-serif',
+  themeVariables: {
+    darkMode: dark,
+    fontSize: '13px',
+    fontFamily: '"Anthropic Sans", sans-serif',
+    lineColor: dark ? '#9c9a92' : '#73726c',
+    textColor: dark ? '#c2c0b6' : '#3d3d3a',
+    primaryColor: dark ? '#2a2a28' : '#f0eee8',
+    primaryTextColor: dark ? '#c2c0b6' : '#3d3d3a',
+    primaryBorderColor: dark ? '#5a5850' : '#b4b2a9',
+  },
+});
+const { svg } = await mermaid.render('erd-svg', `erDiagram
+  PATIENT {
+    uuid id PK
+    string nom
+    string prenom
+    string telephone
+    string email
+    float latitude
+    float longitude
+    timestamp created_at
+  }
+  PHARMACIE {
+    uuid id PK
+    string nom
+    string adresse
+    float latitude
+    float longitude
+    string telephone
+    bool livraison_active
+    timestamp created_at
+  }
+  MEDICAMENT {
+    uuid id PK
+    string nom_commercial
+    string nom_generique
+    string dosage
+    string forme
+  }
+  ORDONNANCE {
+    uuid id PK
+    uuid patient_id FK
+    string image_url
+    string statut
+    timestamp created_at
+  }
+  ORDONNANCE_MEDICAMENT {
+    uuid id PK
+    uuid ordonnance_id FK
+    uuid medicament_id FK
+    string quantite
+    bool corrige_manuellement
+  }
+  DEMANDE {
+    uuid id PK
+    uuid patient_id FK
+    uuid ordonnance_id FK
+    string type
+    string statut
+    timestamp created_at
+  }
+  DEMANDE_PHARMACIE {
+    uuid id PK
+    uuid demande_id FK
+    uuid pharmacie_id FK
+    string reponse
+    string detail_partiel
+    timestamp repondu_at
+  }
+  COMMANDE {
+    uuid id PK
+    uuid demande_id FK
+    uuid pharmacie_id FK
+    string mode_obtention
+    string statut
+    string mode_paiement
+    timestamp created_at
+  }
+  COMMANDE_MEDICAMENT {
+    uuid id PK
+    uuid commande_id FK
+    uuid medicament_id FK
+    int quantite
+    bool disponible
+  }
+  LIVRAISON {
+    uuid id PK
+    uuid commande_id FK
+    string statut
+    string assignee_type
+    string assignee_id
+    timestamp created_at
+  }
+  NOTIFICATION {
+    uuid id PK
+    uuid destinataire_id FK
+    string type_destinataire
+    string type_evenement
+    string message
+    bool lue
+    timestamp created_at
+  }
+
+  PATIENT ||--o{ ORDONNANCE : "soumet"
+  PATIENT ||--o{ DEMANDE : "effectue"
+  ORDONNANCE ||--o{ ORDONNANCE_MEDICAMENT : "contient"
+  MEDICAMENT ||--o{ ORDONNANCE_MEDICAMENT : "figure dans"
+  DEMANDE ||--o| ORDONNANCE : "basee sur"
+  DEMANDE ||--o{ DEMANDE_PHARMACIE : "envoyee a"
+  PHARMACIE ||--o{ DEMANDE_PHARMACIE : "recoit"
+  DEMANDE ||--o| COMMANDE : "aboutit a"
+  PHARMACIE ||--o{ COMMANDE : "traite"
+  COMMANDE ||--o{ COMMANDE_MEDICAMENT : "inclut"
+  MEDICAMENT ||--o{ COMMANDE_MEDICAMENT : "reference dans"
+  COMMANDE ||--o| LIVRAISON : "genere"
+`);
+document.getElementById('erd').innerHTML = svg;
+
+document.querySelectorAll('#erd svg .node').forEach(node => {
+  const firstPath = node.querySelector('path[d]');
+  if (!firstPath) return;
+  const d = firstPath.getAttribute('d');
+  const nums = d.match(/-?[\d.]+/g)?.map(Number);
+  if (!nums || nums.length < 8) return;
+  const xs = [nums[0], nums[2], nums[4], nums[6]];
+  const ys = [nums[1], nums[3], nums[5], nums[7]];
+  const x = Math.min(...xs), y = Math.min(...ys);
+  const w = Math.max(...xs) - x, h = Math.max(...ys) - y;
+  const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+  rect.setAttribute('x', x); rect.setAttribute('y', y);
+  rect.setAttribute('width', w); rect.setAttribute('height', h);
+  rect.setAttribute('rx', '8');
+  for (const a of ['fill', 'stroke', 'stroke-width', 'class', 'style']) {
+    if (firstPath.hasAttribute(a)) rect.setAttribute(a, firstPath.getAttribute(a));
+  }
+  firstPath.replaceWith(rect);
+});
+
+document.querySelectorAll('#erd svg .row-rect-odd path, #erd svg .row-rect-even path').forEach(p => {
+  p.setAttribute('stroke', 'none');
+});
+</script>
