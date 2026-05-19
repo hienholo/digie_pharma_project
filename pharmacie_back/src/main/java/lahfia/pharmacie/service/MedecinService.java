@@ -4,6 +4,7 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,15 +18,16 @@ import lahfia.pharmacie.repository.DisponibiliteMedecinRepository;
 import lahfia.pharmacie.repository.IndisponibilitePonctuelleRepository;
 import lahfia.pharmacie.repository.MedecinRepository;
 import lombok.RequiredArgsConstructor;
- 
+
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class MedecinService {
- 
+
     private final MedecinRepository medecinRepository;
     private final DisponibiliteMedecinRepository disponibiliteRepository;
     private final IndisponibilitePonctuelleRepository indisponibiliteRepository;
+    private final PasswordEncoder passwordEncoder;
  
     public Medecin findById(UUID id) {
         return medecinRepository.findById(id)
@@ -45,6 +47,9 @@ public class MedecinService {
         }
         if (medecinRepository.existsByNumeroOrdre(medecin.getNumeroOrdre())) {
             throw new IllegalArgumentException("Ce numéro d'ordre est déjà enregistré.");
+        }
+        if (medecin.getPasswordHash() != null && !medecin.getPasswordHash().isBlank()) {
+            medecin.setPasswordHash(passwordEncoder.encode(medecin.getPasswordHash()));
         }
         medecin.setStatut(StatutMedecin.EN_ATTENTE_VALIDATION);
         return medecinRepository.save(medecin);

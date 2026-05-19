@@ -3,6 +3,7 @@ package lahfia.pharmacie.service;
 import java.util.List;
 import java.util.UUID;
 
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,6 +18,7 @@ import lombok.RequiredArgsConstructor;
 public class PharmacieService {
 
     private final PharmacieRepository pharmacieRepository;
+    private final PasswordEncoder passwordEncoder;
 
     // Rayon de recherche par défaut en kilomètres
     private static final double RAYON_DEFAUT_KM = 5.0;
@@ -37,6 +39,12 @@ public class PharmacieService {
 
     @Transactional
     public Pharmacie creer(Pharmacie pharmacie) {
+        if (pharmacie.getEmail() != null && pharmacieRepository.existsByEmail(pharmacie.getEmail())) {
+            throw new IllegalArgumentException("Cet email est déjà utilisé.");
+        }
+        if (pharmacie.getPasswordHash() != null && !pharmacie.getPasswordHash().isBlank()) {
+            pharmacie.setPasswordHash(passwordEncoder.encode(pharmacie.getPasswordHash()));
+        }
         return pharmacieRepository.save(pharmacie);
     }
 

@@ -7,6 +7,7 @@ import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 
 import com.fasterxml.jackson.annotation.JsonManagedReference;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -48,10 +49,15 @@ public class Medecin {
     @Column(nullable = false)
     private StatutMedecin statut = StatutMedecin.EN_ATTENTE_VALIDATION;
  
+    @Column(name = "adresse_cabinet")
     private String adresseCabinet;
     private Double latitude;
     private Double longitude;
- 
+
+    @JsonProperty(value = "password", access = JsonProperty.Access.WRITE_ONLY)
+    @Column(name = "password_hash")
+    private String passwordHash;
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
@@ -59,6 +65,10 @@ public class Medecin {
     @JsonManagedReference("medecin-disponibilites")
     @OneToMany(mappedBy = "medecin", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<DisponibiliteMedecin> disponibilites;
+
+    @JsonManagedReference("medecin-indisponibilites")
+    @OneToMany(mappedBy = "medecin", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<IndisponibilitePonctuelle> indisponibilites;
 
     @JsonManagedReference("medecin-ordonnances")
     @OneToMany(mappedBy = "medecin", cascade = CascadeType.ALL, fetch = FetchType.LAZY)

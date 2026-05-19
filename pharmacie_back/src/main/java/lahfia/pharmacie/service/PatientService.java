@@ -3,6 +3,7 @@ package lahfia.pharmacie.service;
 import java.util.List;
 import java.util.UUID;
 
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,6 +18,7 @@ import lombok.RequiredArgsConstructor;
 public class PatientService {
 
     private final PatientRepository patientRepository;
+    private final PasswordEncoder passwordEncoder;
 
     public Patient findById(UUID id) {
         return patientRepository.findById(id)
@@ -27,6 +29,9 @@ public class PatientService {
     public Patient creer(Patient patient) {
         if (patientRepository.existsByTelephone(patient.getTelephone())) {
             throw new IllegalArgumentException("Ce numéro de téléphone est déjà utilisé.");
+        }
+        if (patient.getPasswordHash() != null && !patient.getPasswordHash().isBlank()) {
+            patient.setPasswordHash(passwordEncoder.encode(patient.getPasswordHash()));
         }
         return patientRepository.save(patient);
     }

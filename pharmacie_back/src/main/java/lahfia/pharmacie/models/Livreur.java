@@ -7,6 +7,7 @@ import java.util.UUID;
 import org.hibernate.annotations.CreationTimestamp;
 
 import com.fasterxml.jackson.annotation.JsonManagedReference;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -71,7 +72,11 @@ public class Livreur {
     // Position GPS courante (mise à jour à chaque prise/fin de service)
     private Double latitude;
     private Double longitude;
- 
+
+    @JsonProperty(value = "password", access = JsonProperty.Access.WRITE_ONLY)
+    @Column(name = "password_hash")
+    private String passwordHash;
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;

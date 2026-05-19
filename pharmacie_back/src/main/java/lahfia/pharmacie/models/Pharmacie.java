@@ -5,6 +5,7 @@ import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 
 import com.fasterxml.jackson.annotation.JsonManagedReference;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -32,6 +33,13 @@ public class Pharmacie {
     private Double longitude;
 
     private String telephone;
+
+    @Column(unique = true)
+    private String email;
+
+    @JsonProperty(value = "password", access = JsonProperty.Access.WRITE_ONLY)
+    @Column(name = "password_hash")
+    private String passwordHash;
 
     @Column(name = "livraison_active", nullable = false)
     private Boolean livraisonActive = false;

@@ -3,6 +3,7 @@ package lahfia.pharmacie.service;
 import java.util.List;
 import java.util.UUID;
 
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -12,13 +13,14 @@ import lahfia.pharmacie.exception.ResourceNotFoundException;
 import lahfia.pharmacie.models.Livreur;
 import lahfia.pharmacie.repository.LivreurRepository;
 import lombok.RequiredArgsConstructor;
- 
+
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class LivreurService {
- 
+
     private final LivreurRepository livreurRepository;
+    private final PasswordEncoder passwordEncoder;
  
     public Livreur findById(UUID id) {
         return livreurRepository.findById(id)
@@ -34,6 +36,9 @@ public class LivreurService {
         }
         if (livreurRepository.existsByTelephone(livreur.getTelephone())) {
             throw new IllegalArgumentException("Ce numéro de téléphone est déjà utilisé.");
+        }
+        if (livreur.getPasswordHash() != null && !livreur.getPasswordHash().isBlank()) {
+            livreur.setPasswordHash(passwordEncoder.encode(livreur.getPasswordHash()));
         }
         livreur.setStatut(StatutLivreur.EN_ATTENTE_VALIDATION);
         livreur.setDisponibiliteStatut(DisponibiliteStatut.HORS_LIGNE);

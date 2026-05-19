@@ -1,6 +1,7 @@
 package lahfia.pharmacie.repository;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -10,6 +11,9 @@ import org.springframework.data.repository.query.Param;
 import lahfia.pharmacie.models.Pharmacie;
 
 public interface PharmacieRepository extends JpaRepository<Pharmacie, UUID> {
+
+    boolean existsByEmail(String email);
+    Optional<Pharmacie> findByEmail(String email);
 
     /**
      * Recherche les pharmacies dans un rayon donné (km) via la formule de Haversine.
