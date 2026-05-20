@@ -1,7 +1,8 @@
 import type {
   CreatePatientPayload, CreateDemandePayload, CreateCommandePayload,
-  PatientAPI, PharmacieAPI, OrdonnanceAPI,
-  DemandeAPI, DemandeReponseAPI, CommandeAPI, LivraisonAPI, NotificationAPI,
+  PatientAPI, PharmacieAPI, OrdonnanceAPI, MedicamentAPI,
+  DemandeAPI, DemandeReponseAPI, DemandeEnAttenteAPI,
+  CommandeAPI, CommandePharmacieAPI, LivraisonAPI, NotificationAPI,
   LoginResponse,
 } from "./types";
 
@@ -115,6 +116,12 @@ export const pharmaciesApi = {
       method: "POST",
       body: JSON.stringify(payload),
     }),
+
+  toggleLivraison: (id: string, actif: boolean) =>
+    http<PharmacieAPI>(`/pharmacies/${id}/livraison`, {
+      method: "PATCH",
+      body: JSON.stringify({ actif }),
+    }),
 };
 
 // ── Ordonnances ───────────────────────────────────────────────────────────────
@@ -144,7 +151,6 @@ export const ordonnancesApi = {
 };
 
 // ── Demandes ──────────────────────────────────────────────────────────────────
-// POST /demandes → { patientId, type, ordonnanceId?, rayonKm? }
 
 export const demandesApi = {
   getByPatient: (patientId: string) =>
@@ -152,6 +158,17 @@ export const demandesApi = {
 
   getReponses: (demandeId: string) =>
     http<DemandeReponseAPI[]>(`/demandes/${demandeId}/reponses`),
+
+  // Demandes en attente de réponse pour une pharmacie
+  getEnAttenteParPharmacie: (pharmacieId: string) =>
+    http<DemandeEnAttenteAPI[]>(`/demandes/pharmacie/${pharmacieId}/en-attente`),
+
+  // La pharmacie répond : DISPONIBLE | NON_DISPONIBLE | PARTIEL
+  repondre: (demandeId: string, pharmacieId: string, reponse: "DISPONIBLE" | "NON_DISPONIBLE" | "PARTIEL", detailPartiel?: string) =>
+    http<DemandeReponseAPI>(`/demandes/${demandeId}/repondre`, {
+      method: "POST",
+      body: JSON.stringify({ pharmacieId, reponse, detailPartiel: detailPartiel ?? null }),
+    }),
 
   create: (payload: CreateDemandePayload) =>
     http<DemandeAPI>("/demandes", {
@@ -161,7 +178,6 @@ export const demandesApi = {
 };
 
 // ── Commandes ─────────────────────────────────────────────────────────────────
-// POST /commandes → { demandeId, pharmacieId, modeObtention, modePaiement, medicamentIds }
 
 export const commandesApi = {
   getById: (id: string) =>
@@ -170,8 +186,31 @@ export const commandesApi = {
   getByPharmacie: (pharmacieId: string) =>
     http<CommandeAPI[]>(`/commandes/pharmacie/${pharmacieId}`),
 
+  // Commandes enrichies avec infos patient (côté pharmacie)
+  getByPharmacieDetail: (pharmacieId: string) =>
+    http<CommandePharmacieAPI[]>(`/commandes/pharmacie/${pharmacieId}/detail`),
+
+  marquerPrete: (id: string) =>
+    http<CommandeAPI>(`/commandes/${id}/prete`, { method: "PATCH" }),
+
+  terminer: (id: string) =>
+    http<CommandeAPI>(`/commandes/${id}/terminer`, { method: "PATCH" }),
+
   create: (payload: CreateCommandePayload) =>
     http<CommandeAPI>("/commandes", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
+};
+
+// ── Médicaments ───────────────────────────────────────────────────────────────
+
+export const medicamentsApi = {
+  list: () =>
+    http<MedicamentAPI[]>("/medicaments"),
+
+  create: (payload: Omit<MedicamentAPI, "id">) =>
+    http<MedicamentAPI>("/medicaments", {
       method: "POST",
       body: JSON.stringify(payload),
     }),

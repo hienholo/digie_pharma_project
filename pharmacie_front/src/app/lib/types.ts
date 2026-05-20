@@ -1,6 +1,5 @@
 // ── Types API LAHFIA (alignés sur le MCD backend réel) ───────────────────────
 
-// Patient backend : { id, nom, prenom, telephone (requis), email, latitude?, longitude? }
 export interface PatientAPI {
   id: string;
   nom: string;
@@ -11,7 +10,6 @@ export interface PatientAPI {
   longitude?: number;
 }
 
-// Pharmacie backend : { id, nom, adresse, latitude, longitude, email?, telephone?, livraisonActive }
 export interface PharmacieAPI {
   id: string;
   nom: string;
@@ -24,12 +22,13 @@ export interface PharmacieAPI {
   distanceKm?: number;
 }
 
+// Medicament.nomCommercial / nomGenerique / dosage / forme
 export interface MedicamentAPI {
   id: string;
-  nom: string;
-  forme: string;
+  nomCommercial: string;
+  nomGenerique?: string;
   dosage: string;
-  instructions?: string;
+  forme: string;
 }
 
 export interface OrdonnanceAPI {
@@ -45,31 +44,54 @@ export interface OrdonnanceAPI {
 export interface DemandeAPI {
   id: string;
   patientId: string;
-  type: "LIVRAISON" | "A_LA_LIVRAISON";
-  statut: "EN_COURS" | "ANALYSEE" | "ANNULEE";
+  type: "MEDICAMENT" | "ORDONNANCE";
+  statut: "EN_COURS" | "REPONSE_RECUE" | "VALIDEE" | "ANNULEE";
   ordonnanceId?: string;
   createdAt: string;
 }
 
+// Réponse d'une pharmacie à une demande (vue côté patient)
 export interface DemandeReponseAPI {
   id: string;
   demandeId: string;
   pharmacieId: string;
-  pharmacieNom: string;
-  reponse: "ACCEPTEE" | "PARTIELLE" | "REFUSEE";
+  reponse: "DISPONIBLE" | "NON_DISPONIBLE" | "PARTIEL";
   detailPartiel?: string;
-  prixTotal: number;
+  reponduAt?: string;
+}
+
+// Demande en attente côté pharmacie (DTO aplati)
+export interface DemandeEnAttenteAPI {
+  reponseId: string;
+  demandeId: string;
+  patientPrenom: string;
+  patientNom: string;
+  patientTelephone: string;
+  type: "MEDICAMENT" | "ORDONNANCE";
+  ordonnanceId?: string;
+  ordonnanceImageUrl?: string;
+  medicamentNoms: string[];
   createdAt: string;
 }
 
 export interface CommandeAPI {
   id: string;
-  pharmacieId: string;
-  demandeId: string;
-  statut: "EN_PREPARATION" | "COMMANDE_PRETE" | "EN_LIVRAISON" | "LIVREE" | "TERMINEE";
+  statut: "EN_PREPARATION" | "PRETE" | "EN_LIVRAISON" | "TERMINEE" | "ANNULEE";
   modeObtention: "LIVRAISON" | "RETRAIT";
   modePaiement: "ESPECES" | "CARTE";
   createdAt: string;
+}
+
+// Commande enrichie avec infos patient (côté pharmacie)
+export interface CommandePharmacieAPI {
+  id: string;
+  statut: "EN_PREPARATION" | "PRETE" | "EN_LIVRAISON" | "TERMINEE" | "ANNULEE";
+  modeObtention: "LIVRAISON" | "RETRAIT";
+  modePaiement?: string;
+  createdAt: string;
+  patientPrenom: string;
+  patientNom: string;
+  medicamentNoms: string[];
 }
 
 export interface LivraisonAPI {
@@ -82,7 +104,6 @@ export interface LivraisonAPI {
   assigneeAt?: string;
 }
 
-// Notification backend : { id, destinataireId, typeDestinataire, typeEvenement, message, lue, createdAt }
 export interface NotificationAPI {
   id: string;
   destinataireId: string;
@@ -107,7 +128,6 @@ export interface LoginResponse {
   prenom: string | null;
 }
 
-// POST /patients → { nom, prenom, telephone (requis), email, password }
 export interface CreatePatientPayload {
   nom: string;
   prenom: string;
@@ -118,15 +138,13 @@ export interface CreatePatientPayload {
   longitude?: number;
 }
 
-// POST /demandes → { patientId, type, ordonnanceId?, rayonKm? }
 export interface CreateDemandePayload {
   patientId: string;
-  type: "LIVRAISON" | "A_LA_LIVRAISON";
+  type: "MEDICAMENT" | "ORDONNANCE";
   ordonnanceId?: string;
   rayonKm?: number;
 }
 
-// POST /commandes → { demandeId, pharmacieId, modeObtention, modePaiement, medicamentIds }
 export interface CreateCommandePayload {
   demandeId: string;
   pharmacieId: string;

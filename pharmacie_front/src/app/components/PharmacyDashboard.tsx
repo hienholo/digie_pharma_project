@@ -1,12 +1,18 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { RequestList } from "./RequestList";
 import { InventoryPanel } from "./InventoryPanel";
 import {
   Package, Inbox, BarChart3, LogOut, Home, User,
   MapPin, Star, ChevronRight, Settings, HelpCircle, Shield, Phone,
 } from "lucide-react";
-import { mockRequests, mockInventory } from "../datamock/pharmacy-dashboard.mock";
-import type { Request, InventoryItem } from "../datamock/pharmacy-dashboard.mock";
+import {
+  pharmaciesApi, demandesApi, commandesApi, medicamentsApi, session,
+} from "../lib/api";
+import type { PharmacieAPI, DemandeEnAttenteAPI, CommandePharmacieAPI, MedicamentAPI } from "../lib/types";
+
+// Re-export des types pour les sous-composants
+export type { DemandeEnAttenteAPI as Request } from "../lib/types";
+export type { MedicamentAPI as InventoryItem } from "../lib/types";
 
 type PharmacyTab = "home" | "requests" | "inventory" | "profile";
 
@@ -14,61 +20,52 @@ type Props = {
   onLogout?: () => void;
 };
 
+const GREEN = "#10B981";
+
+const statutLabel: Record<CommandePharmacieAPI["statut"], string> = {
+  EN_PREPARATION: "En préparation",
+  PRETE:          "Prête",
+  EN_LIVRAISON:   "En livraison",
+  TERMINEE:       "Terminée",
+  ANNULEE:        "Annulée",
+};
+
+const statutColor: Record<CommandePharmacieAPI["statut"], string> = {
+  EN_PREPARATION: "#F59E0B",
+  PRETE:          "#10B981",
+  EN_LIVRAISON:   "#3B82F6",
+  TERMINEE:       "#6B7280",
+  ANNULEE:        "#EF4444",
+};
+
 // ── Bottom navigation ─────────────────────────────────────────────────────────
 
 function PharmacyNav({
-  tab,
-  pendingCount,
-  onTab,
-}: {
-  tab: PharmacyTab;
-  pendingCount: number;
-  onTab: (t: PharmacyTab) => void;
-}) {
-  const tabs: { key: PharmacyTab; icon: any; label: string }[] = [
-    { key: "home", icon: Home, label: "Accueil" },
-    { key: "requests", icon: Inbox, label: "Demandes" },
-    { key: "inventory", icon: Package, label: "Stock" },
-    { key: "profile", icon: User, label: "Profil" },
+  tab, pendingCount, onTab,
+}: { tab: PharmacyTab; pendingCount: number; onTab: (t: PharmacyTab) => void }) {
+  const tabs = [
+    { key: "home" as const, icon: Home, label: "Accueil" },
+    { key: "requests" as const, icon: Inbox, label: "Demandes" },
+    { key: "inventory" as const, icon: Package, label: "Stock" },
+    { key: "profile" as const, icon: User, label: "Profil" },
   ];
-
   return (
     <nav className="shrink-0 bg-white border-t border-gray-200 lg:hidden">
       <div className="flex items-center justify-around px-2 py-2">
         {tabs.map(({ key, icon: Icon, label }) => {
           const active = tab === key;
           return (
-            <button
-              key={key}
-              onClick={() => onTab(key)}
-              className="flex flex-col items-center gap-1 flex-1 py-1 relative"
-            >
+            <button key={key} onClick={() => onTab(key)} className="flex flex-col items-center gap-1 flex-1 py-1 relative">
               <div className="relative">
-                <Icon
-                  className="w-6 h-6 transition-colors"
-                  style={{ color: active ? "#10B981" : "#9CA3AF" }}
-                />
+                <Icon className="w-6 h-6 transition-colors" style={{ color: active ? GREEN : "#9CA3AF" }} />
                 {key === "requests" && pendingCount > 0 && (
-                  <span
-                    className="absolute -top-1 -right-1 w-4 h-4 rounded-full flex items-center justify-center text-white font-bold"
-                    style={{ backgroundColor: "#EF4444", fontSize: "9px" }}
-                  >
+                  <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full flex items-center justify-center text-white font-bold bg-red-500" style={{ fontSize: "9px" }}>
                     {pendingCount > 9 ? "9+" : pendingCount}
                   </span>
                 )}
               </div>
-              <span
-                className="text-[10px] font-medium transition-colors"
-                style={{ color: active ? "#10B981" : "#9CA3AF" }}
-              >
-                {label}
-              </span>
-              {active && (
-                <span
-                  className="absolute top-0 left-1/2 -translate-x-1/2 w-6 h-0.5 rounded-full"
-                  style={{ backgroundColor: "#10B981" }}
-                />
-              )}
+              <span className="text-[10px] font-medium transition-colors" style={{ color: active ? GREEN : "#9CA3AF" }}>{label}</span>
+              {active && <span className="absolute top-0 left-1/2 -translate-x-1/2 w-6 h-0.5 rounded-full" style={{ backgroundColor: GREEN }} />}
             </button>
           );
         })}
@@ -78,65 +75,37 @@ function PharmacyNav({
 }
 
 function PharmacySidebarNav({
-  tab,
-  pendingCount,
-  onTab,
-  onLogout,
-}: {
-  tab: PharmacyTab;
-  pendingCount: number;
-  onTab: (t: PharmacyTab) => void;
-  onLogout?: () => void;
-}) {
-  const tabs: { key: PharmacyTab; icon: any; label: string }[] = [
-    { key: "home", icon: Home, label: "Accueil" },
-    { key: "requests", icon: Inbox, label: "Demandes" },
-    { key: "inventory", icon: Package, label: "Stock" },
-    { key: "profile", icon: User, label: "Profil" },
+  tab, pendingCount, onTab, onLogout, pharmacieName,
+}: { tab: PharmacyTab; pendingCount: number; onTab: (t: PharmacyTab) => void; onLogout?: () => void; pharmacieName: string }) {
+  const tabs = [
+    { key: "home" as const, icon: Home, label: "Accueil" },
+    { key: "requests" as const, icon: Inbox, label: "Demandes" },
+    { key: "inventory" as const, icon: Package, label: "Stock" },
+    { key: "profile" as const, icon: User, label: "Profil" },
   ];
-
   return (
-    <aside
-      className="hidden lg:flex flex-col shrink-0 border-r border-gray-200 bg-white"
-      style={{ width: 240 }}
-    >
-      {/* Logo */}
+    <aside className="hidden lg:flex flex-col shrink-0 border-r border-gray-200 bg-white" style={{ width: 240 }}>
       <div className="px-5 py-5 border-b border-gray-100">
         <div className="flex items-center gap-3">
-          <div
-            className="w-10 h-10 rounded-2xl flex items-center justify-center text-white font-bold text-lg"
-            style={{ backgroundColor: "#10B981" }}
-          >
-            P
+          <div className="w-10 h-10 rounded-2xl flex items-center justify-center text-white font-bold text-lg" style={{ backgroundColor: GREEN }}>
+            {pharmacieName.charAt(0).toUpperCase()}
           </div>
           <div>
-            <p className="font-bold text-base" style={{ color: "#10B981" }}>Pharmacie du Plateau</p>
+            <p className="font-bold text-base truncate max-w-[150px]" style={{ color: GREEN }}>{pharmacieName}</p>
             <p className="text-xs text-gray-400">Espace Pharmacie</p>
           </div>
         </div>
       </div>
-
-      {/* Navigation items */}
       <nav className="flex-1 px-3 py-4 space-y-1">
         {tabs.map(({ key, icon: Icon, label }) => {
           const active = tab === key;
           return (
-            <button
-              key={key}
-              onClick={() => onTab(key)}
-              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors text-left"
-              style={{
-                backgroundColor: active ? "#F0FDF4" : "transparent",
-                color: active ? "#10B981" : "#4B5563",
-              }}
-            >
+            <button key={key} onClick={() => onTab(key)} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors text-left"
+              style={{ backgroundColor: active ? "#F0FDF4" : "transparent", color: active ? GREEN : "#4B5563" }}>
               <Icon className="w-5 h-5 shrink-0" />
               <span className="text-sm font-medium flex-1">{label}</span>
               {key === "requests" && pendingCount > 0 && (
-                <span
-                  className="w-5 h-5 rounded-full flex items-center justify-center text-white font-bold shrink-0"
-                  style={{ backgroundColor: "#EF4444", fontSize: "10px" }}
-                >
+                <span className="w-5 h-5 rounded-full flex items-center justify-center text-white font-bold shrink-0 bg-red-500" style={{ fontSize: "10px" }}>
                   {pendingCount > 9 ? "9+" : pendingCount}
                 </span>
               )}
@@ -144,13 +113,8 @@ function PharmacySidebarNav({
           );
         })}
       </nav>
-
-      {/* Logout */}
       <div className="px-3 py-4 border-t border-gray-100">
-        <button
-          onClick={onLogout}
-          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left text-red-500 hover:bg-red-50 transition-colors"
-        >
+        <button onClick={onLogout} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left text-red-500 hover:bg-red-50 transition-colors">
           <LogOut className="w-5 h-5 shrink-0" />
           <span className="text-sm font-medium">Déconnexion</span>
         </button>
@@ -162,34 +126,34 @@ function PharmacySidebarNav({
 // ── Home tab ──────────────────────────────────────────────────────────────────
 
 function PharmacyHomeTab({
-  requests,
-  inventory,
-  onGoRequests,
-  onGoInventory,
+  pharmacie, pendingCount, commandes, onGoRequests, onGoInventory,
 }: {
-  requests: Request[];
-  inventory: InventoryItem[];
+  pharmacie: PharmacieAPI | null;
+  pendingCount: number;
+  commandes: CommandePharmacieAPI[];
   onGoRequests: () => void;
   onGoInventory: () => void;
 }) {
-  const pendingCount = requests.filter((r) => r.status === "pending").length;
-  const lowStockCount = inventory.filter((i) => i.stock < i.minStock).length;
-  const recentRequests = requests.slice(0, 3);
+  const thisMonth = commandes.filter((c) => {
+    const d = new Date(c.createdAt);
+    const now = new Date();
+    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+  }).length;
+
+  const recentCommandes = commandes.slice(0, 3);
 
   return (
     <div className="px-4 py-4 space-y-4">
       {/* Welcome card */}
-      <div
-        className="rounded-2xl p-5 text-white relative overflow-hidden"
-        style={{ background: "linear-gradient(135deg, #10B981 0%, #3B82F6 100%)" }}
-      >
+      <div className="rounded-2xl p-5 text-white relative overflow-hidden"
+        style={{ background: "linear-gradient(135deg, #10B981 0%, #3B82F6 100%)" }}>
         <div className="relative z-10">
           <p className="text-sm text-white/80">Bienvenue 👋</p>
-          <h2 className="text-xl font-bold mt-0.5">Pharmacie du Plateau</h2>
-          <p className="text-xs text-white/70 mt-1">23 Boulevard de la République, Plateau, Abidjan</p>
+          <h2 className="text-xl font-bold mt-0.5">{pharmacie?.nom ?? "Pharmacie"}</h2>
+          <p className="text-xs text-white/70 mt-1">{pharmacie?.adresse ?? "Adresse non renseignée"}</p>
           <div className="flex items-center gap-1.5 mt-2">
             <div className="w-2 h-2 rounded-full bg-white" />
-            <span className="text-xs text-white/90">Ouverte</span>
+            <span className="text-xs text-white/90">{pharmacie?.livraisonActive ? "Livraison active" : "Retrait uniquement"}</span>
           </div>
         </div>
         <div className="absolute -right-4 -top-4 w-24 h-24 rounded-full bg-white/10" />
@@ -199,82 +163,44 @@ function PharmacyHomeTab({
       {/* Stats grid */}
       <div className="grid grid-cols-3 gap-3">
         <div className="bg-white rounded-2xl p-4 border border-gray-100">
-          <p className="text-2xl font-bold text-gray-900">127</p>
-          <p className="text-xs text-gray-500 mt-0.5">Commandes (30j)</p>
+          <p className="text-2xl font-bold text-gray-900">{thisMonth}</p>
+          <p className="text-xs text-gray-500 mt-0.5">Commandes (mois)</p>
         </div>
-        <button
-          onClick={onGoRequests}
-          className="bg-white rounded-2xl p-4 border border-gray-100 text-left hover:border-green-200 transition"
-        >
-          <p
-            className="text-2xl font-bold"
-            style={{ color: pendingCount > 0 ? "#EF4444" : "#10B981" }}
-          >
-            {pendingCount}
-          </p>
+        <button onClick={onGoRequests} className="bg-white rounded-2xl p-4 border border-gray-100 text-left hover:border-green-200 transition">
+          <p className="text-2xl font-bold" style={{ color: pendingCount > 0 ? "#EF4444" : GREEN }}>{pendingCount}</p>
           <p className="text-xs text-gray-500 mt-0.5">En attente</p>
         </button>
-        <button
-          onClick={onGoInventory}
-          className="bg-white rounded-2xl p-4 border border-gray-100 text-left hover:border-green-200 transition"
-        >
-          <p
-            className="text-2xl font-bold"
-            style={{ color: lowStockCount > 0 ? "#F59E0B" : "#10B981" }}
-          >
-            {lowStockCount}
+        <button onClick={onGoInventory} className="bg-white rounded-2xl p-4 border border-gray-100 text-left hover:border-green-200 transition">
+          <p className="text-2xl font-bold" style={{ color: GREEN }}>
+            <Package className="w-6 h-6" style={{ color: GREEN }} />
           </p>
-          <p className="text-xs text-gray-500 mt-0.5">Stock faible</p>
+          <p className="text-xs text-gray-500 mt-0.5">Stock</p>
         </button>
       </div>
 
-      {/* Recent requests */}
+      {/* Commandes récentes */}
       <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
         <div className="px-4 py-3 border-b border-gray-50 flex items-center justify-between">
-          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">
-            Demandes récentes
-          </p>
-          <button onClick={onGoRequests} className="text-xs text-green-600">
-            Voir tout →
-          </button>
+          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Commandes récentes</p>
+          <button onClick={onGoRequests} className="text-xs text-green-600">Voir tout →</button>
         </div>
-        {recentRequests.length === 0 ? (
-          <div className="px-4 py-6 text-center text-sm text-gray-400">
-            Aucune demande récente
-          </div>
+        {recentCommandes.length === 0 ? (
+          <div className="px-4 py-6 text-center text-sm text-gray-400">Aucune commande pour le moment</div>
         ) : (
           <div className="divide-y divide-gray-50">
-            {recentRequests.map((r) => (
-              <div key={r.id} className="px-4 py-3 flex items-center gap-3">
-                <div
-                  className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
-                  style={{
-                    backgroundColor:
-                      r.status === "pending" ? "#FEF3C7" : r.status === "confirmed" ? "#F0FDF4" : "#F3F4F6",
-                  }}
-                >
-                  <Inbox
-                    className="w-4 h-4"
-                    style={{
-                      color:
-                        r.status === "pending" ? "#F59E0B" : r.status === "confirmed" ? "#10B981" : "#9CA3AF",
-                    }}
-                  />
+            {recentCommandes.map((c) => (
+              <div key={c.id} className="px-4 py-3 flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
+                  style={{ backgroundColor: statutColor[c.statut] + "20" }}>
+                  <Inbox className="w-4 h-4" style={{ color: statutColor[c.statut] }} />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-900 truncate">{r.patientName}</p>
-                  <p className="text-xs text-gray-500 truncate">{r.items.join(", ")}</p>
+                  <p className="text-sm font-medium text-gray-900 truncate">{c.patientPrenom} {c.patientNom}</p>
+                  <p className="text-xs text-gray-500 truncate">{c.medicamentNoms.join(", ") || c.modeObtention}</p>
                 </div>
-                <span
-                  className="text-xs px-2 py-0.5 rounded-full font-medium shrink-0"
-                  style={{
-                    backgroundColor:
-                      r.status === "pending" ? "#FEF3C7" : r.status === "confirmed" ? "#F0FDF4" : "#F3F4F6",
-                    color:
-                      r.status === "pending" ? "#D97706" : r.status === "confirmed" ? "#059669" : "#6B7280",
-                  }}
-                >
-                  {r.status === "pending" ? "En attente" : r.status === "confirmed" ? "Confirmé" : r.status}
+                <span className="text-xs px-2 py-0.5 rounded-full font-medium shrink-0"
+                  style={{ backgroundColor: statutColor[c.statut] + "20", color: statutColor[c.statut] }}>
+                  {statutLabel[c.statut]}
                 </span>
               </div>
             ))}
@@ -282,85 +208,131 @@ function PharmacyHomeTab({
         )}
       </div>
 
-      {/* Quick stats bar */}
-      <div className="bg-white rounded-2xl border border-gray-100 p-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div
-              className="w-9 h-9 rounded-xl flex items-center justify-center"
-              style={{ backgroundColor: "#F0FDF4" }}
-            >
-              <BarChart3 className="w-5 h-5 text-green-600" />
+      {/* Livraison toggle */}
+      {pharmacie && (
+        <div className="bg-white rounded-2xl border border-gray-100 p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ backgroundColor: "#F0FDF4" }}>
+                <BarChart3 className="w-5 h-5 text-green-600" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-gray-900">Livraison à domicile</p>
+                <p className="text-xs text-gray-500">{pharmacie.livraisonActive ? "Activée" : "Désactivée"}</p>
+              </div>
             </div>
-            <div>
-              <p className="text-sm font-semibold text-gray-900">Ventes du mois</p>
-              <p className="text-xs text-gray-500">Tendance positive</p>
-            </div>
+            <div className="w-2 h-2 rounded-full" style={{ backgroundColor: pharmacie.livraisonActive ? GREEN : "#D1D5DB" }} />
           </div>
-          <p className="text-lg font-bold" style={{ color: "#10B981" }}>
-            +12%
-          </p>
         </div>
+      )}
+    </div>
+  );
+}
+
+// ── Commandes tab ─────────────────────────────────────────────────────────────
+
+function CommandesTab({ commandes, onMarquerPrete, onTerminer }: {
+  commandes: CommandePharmacieAPI[];
+  onMarquerPrete: (id: string) => void;
+  onTerminer: (id: string) => void;
+}) {
+  if (commandes.length === 0) {
+    return (
+      <div className="px-4 py-8 text-center">
+        <Package className="w-12 h-12 mx-auto text-gray-300 mb-3" />
+        <p className="text-gray-500">Aucune commande pour le moment</p>
       </div>
+    );
+  }
+  return (
+    <div className="px-4 py-4 space-y-3">
+      {commandes.map((c) => (
+        <div key={c.id} className="bg-white rounded-2xl border border-gray-200 p-4">
+          <div className="flex items-start justify-between mb-2">
+            <div>
+              <p className="font-medium text-gray-900">{c.patientPrenom} {c.patientNom}</p>
+              <p className="text-xs text-gray-500 mt-0.5">
+                {new Date(c.createdAt).toLocaleDateString("fr-FR")} · {c.modeObtention === "LIVRAISON" ? "Livraison" : "Retrait"}
+              </p>
+            </div>
+            <span className="text-xs px-2 py-1 rounded-full font-medium"
+              style={{ backgroundColor: statutColor[c.statut] + "20", color: statutColor[c.statut] }}>
+              {statutLabel[c.statut]}
+            </span>
+          </div>
+          {c.medicamentNoms.length > 0 && (
+            <p className="text-sm text-gray-600 mb-3">
+              <span className="font-medium">Médicaments :</span> {c.medicamentNoms.join(", ")}
+            </p>
+          )}
+          {c.statut === "EN_PREPARATION" && (
+            <button onClick={() => onMarquerPrete(c.id)}
+              className="w-full py-2 rounded-xl text-white text-sm font-medium"
+              style={{ backgroundColor: GREEN }}>
+              Marquer comme prête
+            </button>
+          )}
+          {c.statut === "PRETE" && c.modeObtention === "RETRAIT" && (
+            <button onClick={() => onTerminer(c.id)}
+              className="w-full py-2 rounded-xl text-white text-sm font-medium bg-gray-500">
+              Confirmer le retrait
+            </button>
+          )}
+        </div>
+      ))}
     </div>
   );
 }
 
 // ── Profile tab ───────────────────────────────────────────────────────────────
 
-function PharmacyProfileTab({ onLogout }: { onLogout?: () => void }) {
+function PharmacyProfileTab({ pharmacie, onLogout }: { pharmacie: PharmacieAPI | null; onLogout?: () => void }) {
   return (
     <div className="px-4 py-4 space-y-4 pb-6">
-      {/* Pharmacy card */}
       <div className="bg-white rounded-2xl border border-gray-100 p-5">
         <div className="flex items-center gap-4">
-          <div
-            className="w-14 h-14 rounded-2xl flex items-center justify-center text-white text-xl font-bold shrink-0"
-            style={{ backgroundColor: "#10B981" }}
-          >
-            E
+          <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-white text-xl font-bold shrink-0"
+            style={{ backgroundColor: GREEN }}>
+            {(pharmacie?.nom ?? "P").charAt(0).toUpperCase()}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="font-bold text-gray-900">Pharmacie du Plateau</p>
-            <p className="text-xs text-gray-500 mt-0.5">23 Boulevard de la République, Plateau, Abidjan</p>
+            <p className="font-bold text-gray-900">{pharmacie?.nom ?? "Pharmacie"}</p>
+            <p className="text-xs text-gray-500 mt-0.5">{pharmacie?.adresse ?? "—"}</p>
             <div className="flex items-center gap-1 mt-1">
               <Star className="w-3 h-3 text-yellow-400" fill="#FBBF24" />
-              <span className="text-xs text-gray-600">4.8 · 127 commandes</span>
+              <span className="text-xs text-gray-600">Espace pharmacie</span>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Info */}
       <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
         <div className="px-4 py-3 border-b border-gray-50">
-          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">
-            Informations
-          </p>
+          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Informations</p>
         </div>
         <div className="divide-y divide-gray-50">
-          <div className="flex items-center gap-3 px-4 py-3">
-            <MapPin className="w-4 h-4 text-gray-400 shrink-0" />
-            <span className="text-sm text-gray-800">23 Boulevard de la République, Plateau, Abidjan</span>
-          </div>
-          <div className="flex items-center gap-3 px-4 py-3">
-            <Phone className="w-4 h-4 text-gray-400 shrink-0" />
-            <span className="text-sm text-gray-800">+225 27 22 45 67 89</span>
-          </div>
+          {pharmacie?.adresse && (
+            <div className="flex items-center gap-3 px-4 py-3">
+              <MapPin className="w-4 h-4 text-gray-400 shrink-0" />
+              <span className="text-sm text-gray-800">{pharmacie.adresse}</span>
+            </div>
+          )}
+          {pharmacie?.telephone && (
+            <div className="flex items-center gap-3 px-4 py-3">
+              <Phone className="w-4 h-4 text-gray-400 shrink-0" />
+              <span className="text-sm text-gray-800">{pharmacie.telephone}</span>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Menu */}
       <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
         {[
           { icon: Settings, label: "Paramètres de la pharmacie" },
           { icon: Shield, label: "Confidentialité & données" },
           { icon: HelpCircle, label: "Aide & support" },
         ].map(({ icon: Icon, label }) => (
-          <button
-            key={label}
-            className="w-full flex items-center justify-between px-4 py-3 hover:bg-gray-50 border-b last:border-b-0 border-gray-50 text-left"
-          >
+          <button key={label} className="w-full flex items-center justify-between px-4 py-3 hover:bg-gray-50 border-b last:border-b-0 border-gray-50 text-left">
             <div className="flex items-center gap-3">
               <Icon className="w-4 h-4 text-gray-400" />
               <span className="text-sm text-gray-800">{label}</span>
@@ -370,11 +342,7 @@ function PharmacyProfileTab({ onLogout }: { onLogout?: () => void }) {
         ))}
       </div>
 
-      {/* Logout */}
-      <button
-        onClick={onLogout}
-        className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl border border-red-200 text-red-600 hover:bg-red-50 transition"
-      >
+      <button onClick={onLogout} className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl border border-red-200 text-red-600 hover:bg-red-50 transition">
         <LogOut className="w-4 h-4" />
         <span className="text-sm font-medium">Déconnexion</span>
       </button>
@@ -386,84 +354,122 @@ function PharmacyProfileTab({ onLogout }: { onLogout?: () => void }) {
 
 export function PharmacyDashboard({ onLogout }: Props) {
   const [tab, setTab] = useState<PharmacyTab>("home");
-  const [requests, setRequests] = useState<Request[]>(mockRequests);
-  const [inventory, setInventory] = useState<InventoryItem[]>(mockInventory);
+  const pharmacieId = session.getUserId();
 
-  const pendingCount = requests.filter((r) => r.status === "pending").length;
+  const [pharmacie, setPharmacie]         = useState<PharmacieAPI | null>(null);
+  const [demandesEnAttente, setDemandes]  = useState<DemandeEnAttenteAPI[]>([]);
+  const [commandes, setCommandes]         = useState<CommandePharmacieAPI[]>([]);
+  const [medicaments, setMedicaments]     = useState<MedicamentAPI[]>([]);
+
+  useEffect(() => {
+    if (!pharmacieId) return;
+    pharmaciesApi.getById(pharmacieId).then(setPharmacie).catch(() => {});
+    demandesApi.getEnAttenteParPharmacie(pharmacieId).then(setDemandes).catch(() => {});
+    commandesApi.getByPharmacieDetail(pharmacieId).then(setCommandes).catch(() => {});
+    medicamentsApi.list().then(setMedicaments).catch(() => {});
+  }, [pharmacieId]);
+
+  const handleMarquerPrete = async (id: string) => {
+    await commandesApi.marquerPrete(id);
+    commandesApi.getByPharmacieDetail(pharmacieId).then(setCommandes).catch(() => {});
+  };
+
+  const handleTerminer = async (id: string) => {
+    await commandesApi.terminer(id);
+    commandesApi.getByPharmacieDetail(pharmacieId).then(setCommandes).catch(() => {});
+  };
+
+  const handleAddMedicament = async (m: Omit<MedicamentAPI, "id">) => {
+    const created = await medicamentsApi.create(m);
+    setMedicaments((prev) => [...prev, created]);
+  };
+
+  const pharmacieName = pharmacie?.nom ?? "Pharmacie";
 
   return (
     <div className="flex-1 flex overflow-hidden" style={{ backgroundColor: "#F3F4F6" }}>
-      {/* Desktop sidebar */}
-      <PharmacySidebarNav tab={tab} pendingCount={pendingCount} onTab={setTab} onLogout={onLogout} />
+      <PharmacySidebarNav
+        tab={tab} pendingCount={demandesEnAttente.length}
+        onTab={setTab} onLogout={onLogout} pharmacieName={pharmacieName}
+      />
 
-      {/* Main content column */}
       <div className="flex-1 flex flex-col overflow-hidden min-w-0">
-      {/* Header — mobile/tablet only */}
-      <header className="shrink-0 bg-white border-b border-gray-200 lg:hidden">
-        <div className="px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div
-              className="w-9 h-9 rounded-2xl flex items-center justify-center text-white font-bold"
-              style={{ backgroundColor: "#10B981" }}
-            >
-              E
-            </div>
-            <div>
-              <p className="font-semibold text-gray-900 text-sm">Pharmacie du Plateau</p>
-              <div className="flex items-center gap-1.5">
-                <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: "#10B981" }} />
-                <span className="text-xs" style={{ color: "#10B981" }}>Ouverte</span>
+        {/* Header mobile */}
+        <header className="shrink-0 bg-white border-b border-gray-200 lg:hidden">
+          <div className="px-4 py-3 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-2xl flex items-center justify-center text-white font-bold" style={{ backgroundColor: GREEN }}>
+                {pharmacieName.charAt(0).toUpperCase()}
+              </div>
+              <div>
+                <p className="font-semibold text-gray-900 text-sm">{pharmacieName}</p>
+                <div className="flex items-center gap-1.5">
+                  <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: GREEN }} />
+                  <span className="text-xs" style={{ color: GREEN }}>En ligne</span>
+                </div>
               </div>
             </div>
+            {onLogout && (
+              <button onClick={onLogout} className="p-2 rounded-full hover:bg-gray-100">
+                <LogOut className="w-5 h-5 text-gray-600" />
+              </button>
+            )}
           </div>
-          {onLogout && (
-            <button onClick={onLogout} className="p-2 rounded-full hover:bg-gray-100" title="Déconnexion">
-              <LogOut className="w-5 h-5 text-gray-600" />
-            </button>
+        </header>
+
+        {/* Header desktop */}
+        <header className="hidden lg:flex shrink-0 bg-white border-b border-gray-200 items-center justify-between px-6 py-3">
+          <h1 className="font-bold text-gray-900 text-lg">
+            {tab === "home" && "Tableau de bord"}
+            {tab === "requests" && "Demandes patients"}
+            {tab === "inventory" && "Catalogue médicaments"}
+            {tab === "profile" && "Profil pharmacie"}
+          </h1>
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 rounded-full" style={{ backgroundColor: GREEN }} />
+            <span className="text-sm text-gray-500">{pharmacieName}</span>
+          </div>
+        </header>
+
+        {/* Tab content */}
+        <div className="flex-1 overflow-y-auto">
+          {tab === "home" && (
+            <PharmacyHomeTab
+              pharmacie={pharmacie}
+              pendingCount={demandesEnAttente.length}
+              commandes={commandes}
+              onGoRequests={() => setTab("requests")}
+              onGoInventory={() => setTab("inventory")}
+            />
+          )}
+          {tab === "requests" && (
+            <div className="px-4 py-4">
+              <RequestList
+                requests={demandesEnAttente}
+                pharmacieId={pharmacieId}
+                onRepondu={(reponseId) =>
+                  setDemandes((prev) => prev.filter((d) => d.reponseId !== reponseId))
+                }
+              />
+            </div>
+          )}
+          {tab === "inventory" && (
+            <div className="px-4 py-4">
+              <InventoryPanel
+                medicaments={medicaments}
+                onAdd={handleAddMedicament}
+              />
+            </div>
+          )}
+          {tab === "profile" && <PharmacyProfileTab pharmacie={pharmacie} onLogout={onLogout} />}
+          {/* Commandes accessibles depuis l'accueil — onglet dédié si besoin */}
+          {tab === ("commandes" as PharmacyTab) && (
+            <CommandesTab commandes={commandes} onMarquerPrete={handleMarquerPrete} onTerminer={handleTerminer} />
           )}
         </div>
-      </header>
 
-      {/* Desktop topbar */}
-      <header className="hidden lg:flex shrink-0 bg-white border-b border-gray-200 items-center justify-between px-6 py-3">
-        <h1 className="font-bold text-gray-900 text-lg">
-          {tab === "home" && "Tableau de bord"}
-          {tab === "requests" && "Demandes patients"}
-          {tab === "inventory" && "Gestion du stock"}
-          {tab === "profile" && "Profil pharmacie"}
-        </h1>
-        <div className="flex items-center gap-2">
-          <div className="w-2 h-2 rounded-full" style={{ backgroundColor: "#10B981" }} />
-          <span className="text-sm text-gray-500">Pharmacie du Plateau · Ouverte</span>
-        </div>
-      </header>
-
-      {/* Tab content */}
-      <div className="flex-1 overflow-y-auto">
-        {tab === "home" && (
-          <PharmacyHomeTab
-            requests={requests}
-            inventory={inventory}
-            onGoRequests={() => setTab("requests")}
-            onGoInventory={() => setTab("inventory")}
-          />
-        )}
-        {tab === "requests" && (
-          <div className="px-4 py-4">
-            <RequestList requests={requests} onUpdate={setRequests} />
-          </div>
-        )}
-        {tab === "inventory" && (
-          <div className="px-4 py-4">
-            <InventoryPanel inventory={inventory} onUpdate={setInventory} />
-          </div>
-        )}
-        {tab === "profile" && <PharmacyProfileTab onLogout={onLogout} />}
+        <PharmacyNav tab={tab} pendingCount={demandesEnAttente.length} onTab={setTab} />
       </div>
-
-      {/* Bottom navigation */}
-      <PharmacyNav tab={tab} pendingCount={pendingCount} onTab={setTab} />
-      </div>{/* end main content column */}
     </div>
   );
 }

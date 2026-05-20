@@ -6,6 +6,7 @@ import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import lahfia.pharmacie.dto.CommandePharmacieDTO;
 import lahfia.pharmacie.enums.ModeObtention;
 import lahfia.pharmacie.enums.ModePaiement;
 import lahfia.pharmacie.enums.Statut;
@@ -17,6 +18,7 @@ import lahfia.pharmacie.models.Commande;
 import lahfia.pharmacie.models.CommandeMedicament;
 import lahfia.pharmacie.models.Demande;
 import lahfia.pharmacie.models.Medicament;
+import lahfia.pharmacie.models.Patient;
 import lahfia.pharmacie.models.Pharmacie;
 import lahfia.pharmacie.repository.CommandeRepository;
 import lahfia.pharmacie.repository.MedicamentRepository;
@@ -41,6 +43,29 @@ public class CommandeService {
 
     public List<Commande> findByPharmacie(UUID pharmacieId) {
         return commandeRepository.findByPharmacieIdOrderByCreatedAtDesc(pharmacieId);
+    }
+
+    public List<CommandePharmacieDTO> findByPharmacieDto(UUID pharmacieId) {
+        List<Commande> commandes = commandeRepository.findByPharmacieIdOrderByCreatedAtDesc(pharmacieId);
+        List<CommandePharmacieDTO> result = new java.util.ArrayList<>();
+        for (Commande c : commandes) {
+            Patient patient = c.getDemande().getPatient();
+            List<String> noms = new java.util.ArrayList<>();
+            for (CommandeMedicament cm : c.getMedicaments()) {
+                noms.add(cm.getMedicament().getNomCommercial());
+            }
+            result.add(new CommandePharmacieDTO(
+                    c.getId(),
+                    c.getStatut().name(),
+                    c.getModeObtention().name(),
+                    c.getModePaiement() != null ? c.getModePaiement().name() : null,
+                    c.getCreatedAt(),
+                    patient.getPrenom(),
+                    patient.getNom(),
+                    noms
+            ));
+        }
+        return result;
     }
 
     /**

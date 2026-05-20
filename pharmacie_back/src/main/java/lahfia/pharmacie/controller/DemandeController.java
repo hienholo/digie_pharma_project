@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import lahfia.pharmacie.dto.DemandeEnAttenteDTO;
 import lahfia.pharmacie.enums.Reponse;
 import lahfia.pharmacie.enums.Type;
 import lahfia.pharmacie.models.Demande;
@@ -41,7 +42,7 @@ public class DemandeController {
      * Toutes les demandes non encore traitées par une pharmacie.
      */
     @GetMapping("/pharmacie/{pharmacieId}/en-attente")
-    public ResponseEntity<List<DemandePharmacieReponse>> getEnAttenteParPharmacie(
+    public ResponseEntity<List<DemandeEnAttenteDTO>> getEnAttenteParPharmacie(
             @PathVariable UUID pharmacieId) {
         return ResponseEntity.ok(demandeService.getDemandesEnAttente(pharmacieId));
     }

@@ -3,10 +3,12 @@ package lahfia.pharmacie.service;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import lahfia.pharmacie.dto.DemandeEnAttenteDTO;
 import lahfia.pharmacie.enums.Reponse;
 import lahfia.pharmacie.enums.StatutDemande;
 import lahfia.pharmacie.enums.Type;
@@ -136,9 +138,44 @@ public class DemandeService {
     }
 
     /**
-     * Retourne les demandes en attente de réponse pour une pharmacie donnée.
+     * Retourne les demandes en attente de réponse pour une pharmacie donnée,
+     * avec les informations patient et médicaments aplaties dans un DTO.
      */
-    public List<DemandePharmacieReponse> getDemandesEnAttente(UUID pharmacieId) {
-        return reponseRepository.findByPharmacieIdAndReponseIsNull(pharmacieId);
+    public List<DemandeEnAttenteDTO> getDemandesEnAttente(UUID pharmacieId) {
+        return reponseRepository.findByPharmacieIdAndReponseIsNull(pharmacieId)
+                .stream()
+                .map(r -> {
+                    Demande d = r.getDemande();
+                    Patient p = d.getPatient();
+                    Ordonnance ord = d.getOrdonnance();
+                    List<String> meds = extractMedicamentNoms(ord);
+                    return new DemandeEnAttenteDTO(
+                            r.getId(),
+                            d.getId(),
+                            p.getPrenom(),
+                            p.getNom(),
+                            p.getTelephone(),
+                            d.getType().name(),
+                            ord != null ? ord.getId() : null,
+                            ord != null ? ord.getImageUrl() : null,
+                            meds,
+                            d.getCreatedAt()
+                    );
+                })
+                .collect(Collectors.toList());
+    }
+
+    private List<String> extractMedicamentNoms(Ordonnance ord) {
+        if (ord == null) return List.of();
+        List<String> noms = new java.util.ArrayList<>();
+        for (lahfia.pharmacie.models.OrdonnanceMedicament om : ord.getMedicamentsOcr()) {
+            noms.add(om.getMedicament().getNomCommercial());
+        }
+        if (noms.isEmpty()) {
+            for (lahfia.pharmacie.models.LigneOrdonnance l : ord.getLignes()) {
+                noms.add(l.getMedicament().getNomCommercial());
+            }
+        }
+        return noms;
     }
 }

@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import lahfia.pharmacie.dto.CommandePharmacieDTO;
 import lahfia.pharmacie.enums.ModeObtention;
 import lahfia.pharmacie.enums.ModePaiement;
 import lahfia.pharmacie.models.Commande;
@@ -34,6 +35,11 @@ public class CommandeController {
     @GetMapping("/pharmacie/{pharmacieId}")
     public ResponseEntity<List<Commande>> getByPharmacie(@PathVariable UUID pharmacieId) {
         return ResponseEntity.ok(commandeService.findByPharmacie(pharmacieId));
+    }
+
+    @GetMapping("/pharmacie/{pharmacieId}/detail")
+    public ResponseEntity<List<CommandePharmacieDTO>> getByPharmacieDetail(@PathVariable UUID pharmacieId) {
+        return ResponseEntity.ok(commandeService.findByPharmacieDto(pharmacieId));
     }
 
     /**
