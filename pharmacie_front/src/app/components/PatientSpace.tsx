@@ -2321,7 +2321,7 @@ export function PatientSpace({ onLogout, userId }: Props) {
       )}
 
       {/* ── Tab: Rendez-vous ── */}
-      {tab === "appointments" && <PatientDoctorAppointments />}
+      {tab === "appointments" && <PatientDoctorAppointments patientId={userId} />}
 
       {/* ── Tab: Profil ── */}
       {tab === "profile" && <ProfilePage onLogout={onLogout} userId={userId} orders={apiOrderDisplays} />}

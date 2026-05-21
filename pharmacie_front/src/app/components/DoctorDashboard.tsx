@@ -50,7 +50,7 @@ export function DoctorDashboard({ onLogout }: Props) {
       content = <DoctorPatientsList patients={patients} loading={loading} />;
       break;
     case "appointments":
-      content = <DoctorAppointments />;
+      content = <DoctorAppointments medecinId={medecinId} />;
       break;
     case "prescription":
       content = (

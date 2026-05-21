@@ -17,8 +17,10 @@ const STATUS_LABELS: Record<string, string> = {
   ANNULE:     "Annulé",
 };
 
-export function DoctorAppointments() {
-  const medecinId = session.getUserId();
+type Props = { medecinId?: string };
+
+export function DoctorAppointments({ medecinId: medecinIdProp }: Props = {}) {
+  const medecinId = medecinIdProp || session.getUserId();
   const [rdvs, setRdvs] = useState<RendezVousAPI[]>([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<RendezVousAPI | null>(null);
