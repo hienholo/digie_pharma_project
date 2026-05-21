@@ -1,333 +1,293 @@
-import { useState } from "react";
-import { Plus, X, Check, ChevronDown, Pill } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Plus, X, Check, Pill, Search, User } from "lucide-react";
+import type { PatientAPI, MedicamentAPI, OrdonnanceNumeriqueAPI } from "../lib/types";
+import { medicamentsApi, ordonnancesNumeriquesApi } from "../lib/api";
 
-interface PrescriptionMedication {
-  id: string;
-  name: string;
-  dosage: string;
-  frequency: string;
-  duration: string;
+interface LigneForme {
+  tempId: string;
+  medicament: MedicamentAPI;
+  quantite: number;
+  posologie: string;
+  duree: string;
+  instructions: string;
 }
 
-interface Props {
+type Props = {
+  medecinId: string;
+  patients: PatientAPI[];
   onClose: () => void;
-}
+  onCreated: (o: OrdonnanceNumeriqueAPI) => void;
+};
 
-const commonMedications = [
-  "Doliprane 500mg",
-  "Amoxicilline 500mg",
-  "Lisinopril",
-  "Metformine",
-  "Albuterol",
-  "Fluticasone",
-  "Atorvastatine",
-  "Vitamine D3",
-];
+export function DoctorPrescriptionForm({ medecinId, patients, onClose, onCreated }: Props) {
+  const [medicaments, setMedicaments] = useState<MedicamentAPI[]>([]);
+  const [selectedPatient, setSelectedPatient] = useState<PatientAPI | null>(null);
+  const [patientSearch, setPatientSearch] = useState("");
+  const [showPatientDrop, setShowPatientDrop] = useState(false);
+  const [lignes, setLignes] = useState<LigneForme[]>([]);
 
-const frequencies = ["Une fois par jour", "Deux fois par jour", "Trois fois par jour", "Quatre fois par jour", "Au besoin"];
+  const [medSearch, setMedSearch] = useState("");
+  const [showMedDrop, setShowMedDrop] = useState(false);
+  const [selectedMed, setSelectedMed] = useState<MedicamentAPI | null>(null);
+  const [quantite, setQuantite] = useState(1);
+  const [posologie, setPosologie] = useState("");
+  const [duree, setDuree] = useState("7 jours");
+  const [instructions, setInstructions] = useState("");
 
-export function DoctorPrescriptionForm({ onClose }: Props) {
-  const [patientName, setPatientName] = useState("");
-  const [patientPhone, setPatientPhone] = useState("");
-  const [patientEmail, setPatientEmail] = useState("");
-  const [medications, setMedications] = useState<PrescriptionMedication[]>([]);
-  const [notes, setNotes] = useState("");
-  const [newMedName, setNewMedName] = useState("");
-  const [newMedDosage, setNewMedDosage] = useState("");
-  const [newMedFrequency, setNewMedFrequency] = useState(frequencies[0]);
-  const [newMedDuration, setNewMedDuration] = useState("7 jours");
-  const [showMedDropdown, setShowMedDropdown] = useState(false);
-  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
 
-  const addMedication = () => {
-    const newErrors: Record<string, string> = {};
+  useEffect(() => {
+    medicamentsApi.list().then(setMedicaments).catch(console.error);
+  }, []);
 
-    if (!newMedName) newErrors.medName = "Nom du médicament requis";
-    if (!newMedDosage) newErrors.dosage = "Dosage requis";
+  const filteredPatients = patients.filter((p) =>
+    `${p.prenom} ${p.nom}`.toLowerCase().includes(patientSearch.toLowerCase()) ||
+    p.telephone.includes(patientSearch),
+  );
 
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors);
-      return;
-    }
+  const filteredMeds = medicaments.filter((m) =>
+    m.nomCommercial.toLowerCase().includes(medSearch.toLowerCase()) ||
+    (m.nomGenerique ?? "").toLowerCase().includes(medSearch.toLowerCase()),
+  );
 
-    const newMed: PrescriptionMedication = {
-      id: Date.now().toString(),
-      name: newMedName,
-      dosage: newMedDosage,
-      frequency: newMedFrequency,
-      duration: newMedDuration,
-    };
-
-    setMedications([...medications, newMed]);
-    setNewMedName("");
-    setNewMedDosage("");
-    setNewMedFrequency(frequencies[0]);
-    setNewMedDuration("7 jours");
-    setErrors({});
+  const addLigne = () => {
+    if (!selectedMed) return;
+    setLignes((prev) => [...prev, {
+      tempId: Date.now().toString(),
+      medicament: selectedMed,
+      quantite,
+      posologie,
+      duree,
+      instructions,
+    }]);
+    setSelectedMed(null);
+    setMedSearch("");
+    setQuantite(1);
+    setPosologie("");
+    setDuree("7 jours");
+    setInstructions("");
   };
 
-  const removeMedication = (id: string) => {
-    setMedications(medications.filter((m) => m.id !== id));
-  };
+  const removeLigne = (tempId: string) => setLignes((prev) => prev.filter((l) => l.tempId !== tempId));
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
-
-    const newErrors: Record<string, string> = {};
-
-    if (!patientName) newErrors.patientName = "Nom du patient requis";
-    if (!patientEmail) newErrors.patientEmail = "Email du patient requis";
-    if (medications.length === 0) newErrors.medications = "Ajoutez au moins un médicament";
-
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors);
-      return;
+    if (!selectedPatient) { setError("Sélectionnez un patient"); return; }
+    if (lignes.length === 0) { setError("Ajoutez au moins un médicament"); return; }
+    setError(null);
+    setSubmitting(true);
+    try {
+      const result = await ordonnancesNumeriquesApi.rediger({
+        medecinId,
+        patientId: selectedPatient.id,
+        lignes: lignes.map((l) => ({
+          medicamentId: l.medicament.id,
+          quantite: l.quantite,
+          posologie: l.posologie || undefined,
+          duree: l.duree || undefined,
+          instructions: l.instructions || undefined,
+        })),
+      });
+      onCreated(result);
+      setSuccess(true);
+      setTimeout(() => { setSuccess(false); onClose(); }, 2000);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Erreur lors de la création");
+    } finally {
+      setSubmitting(false);
     }
-
-    // Simulate prescription submission
-    console.log({
-      patientName,
-      patientPhone,
-      patientEmail,
-      medications,
-      notes,
-      createdAt: new Date().toISOString(),
-    });
-
-    // Show success and reset
-    alert("Ordonnance créée avec succès et envoyée au patient!");
-    resetForm();
-    onClose();
   };
 
-  const resetForm = () => {
-    setPatientName("");
-    setPatientPhone("");
-    setPatientEmail("");
-    setMedications([]);
-    setNotes("");
-    setErrors({});
-  };
-
-  const handleSelectMedication = (med: string) => {
-    setNewMedName(med);
-    setShowMedDropdown(false);
-  };
+  if (success) {
+    return (
+      <div className="flex-1 flex flex-col items-center justify-center p-6">
+        <div className="text-center space-y-4">
+          <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto">
+            <Check className="w-8 h-8 text-green-600" />
+          </div>
+          <h2 className="text-xl font-bold text-gray-900">Ordonnance créée !</h2>
+          <p className="text-gray-600">L'ordonnance a été envoyée au patient {selectedPatient?.prenom} {selectedPatient?.nom}.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
       <form onSubmit={handleSubmit} className="flex-1 flex flex-col overflow-y-auto">
-        {/* Patient Information */}
+
+        {/* Patient */}
         <div className="px-6 py-4 bg-white border-b border-gray-100">
-          <h2 className="font-semibold text-gray-900 mb-4">Informations du patient</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="text-sm text-gray-700 font-medium block mb-2">
-                Nom du patient *
-              </label>
-              <input
-                type="text"
-                value={patientName}
-                onChange={(e) => setPatientName(e.target.value)}
-                placeholder="Ex: Jean Dupont"
-                className={`w-full px-4 py-2 rounded-lg border ${
-                  errors.patientName ? "border-red-500" : "border-gray-300"
-                } bg-white focus:outline-none focus:border-blue-500`}
-              />
-              {errors.patientName && <p className="text-red-600 text-xs mt-1">{errors.patientName}</p>}
-            </div>
-
-            <div>
-              <label className="text-sm text-gray-700 font-medium block mb-2">Téléphone</label>
-              <input
-                type="tel"
-                value={patientPhone}
-                onChange={(e) => setPatientPhone(e.target.value)}
-                placeholder="Ex: +225 07 12 34 56 78"
-                className="w-full px-4 py-2 rounded-lg border border-gray-300 bg-white focus:outline-none focus:border-blue-500"
-              />
-            </div>
-
-            <div className="md:col-span-2">
-              <label className="text-sm text-gray-700 font-medium block mb-2">
-                Email *
-              </label>
-              <input
-                type="email"
-                value={patientEmail}
-                onChange={(e) => setPatientEmail(e.target.value)}
-                placeholder="Ex: jean@email.com"
-                className={`w-full px-4 py-2 rounded-lg border ${
-                  errors.patientEmail ? "border-red-500" : "border-gray-300"
-                } bg-white focus:outline-none focus:border-blue-500`}
-              />
-              {errors.patientEmail && <p className="text-red-600 text-xs mt-1">{errors.patientEmail}</p>}
-            </div>
-          </div>
-        </div>
-
-        {/* Medications */}
-        <div className="px-6 py-4 border-b border-gray-100">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="font-semibold text-gray-900">Médicaments</h2>
-            {errors.medications && <p className="text-red-600 text-xs">{errors.medications}</p>}
-          </div>
-
-          {/* Add Medication Section */}
-          <div className="bg-blue-50 rounded-xl p-4 mb-4 border border-blue-200">
-            <div className="space-y-3">
-              <div>
-                <label className="text-sm text-gray-700 font-medium block mb-2">Médicament</label>
-                <div className="relative">
-                  <input
-                    type="text"
-                    value={newMedName}
-                    onChange={(e) => {
-                      setNewMedName(e.target.value);
-                      setShowMedDropdown(true);
-                    }}
-                    onFocus={() => setShowMedDropdown(true)}
-                    placeholder="Saisir ou sélectionner un médicament"
-                    className="w-full px-4 py-2 rounded-lg border border-gray-300 bg-white focus:outline-none focus:border-blue-500"
-                  />
-                  {showMedDropdown && (
-                    <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-300 rounded-lg shadow-lg z-10">
-                      {commonMedications
-                        .filter((med) =>
-                          med.toLowerCase().includes(newMedName.toLowerCase())
-                        )
-                        .map((med) => (
-                          <button
-                            key={med}
-                            type="button"
-                            onClick={() => handleSelectMedication(med)}
-                            className="w-full px-4 py-2 text-left hover:bg-blue-50 transition"
-                          >
-                            {med}
-                          </button>
-                        ))}
-                    </div>
-                  )}
-                </div>
-                {errors.medName && <p className="text-red-600 text-xs mt-1">{errors.medName}</p>}
+          <h2 className="font-semibold text-gray-900 mb-3">Patient *</h2>
+          {selectedPatient ? (
+            <div className="flex items-center gap-3 p-3 bg-red-50 rounded-xl border border-red-200">
+              <div className="w-10 h-10 bg-red-600 text-white rounded-full flex items-center justify-center font-bold">
+                {selectedPatient.prenom.charAt(0)}
               </div>
-
-              <div className="grid grid-cols-3 gap-3">
-                <div>
-                  <label className="text-sm text-gray-700 font-medium block mb-2">Dosage *</label>
-                  <input
-                    type="text"
-                    value={newMedDosage}
-                    onChange={(e) => setNewMedDosage(e.target.value)}
-                    placeholder="Ex: 500mg"
-                    className={`w-full px-3 py-2 rounded-lg border ${
-                      errors.dosage ? "border-red-500" : "border-gray-300"
-                    } bg-white focus:outline-none focus:border-blue-500`}
-                  />
-                </div>
-
-                <div>
-                  <label className="text-sm text-gray-700 font-medium block mb-2">Fréquence</label>
-                  <select
-                    value={newMedFrequency}
-                    onChange={(e) => setNewMedFrequency(e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white focus:outline-none focus:border-blue-500"
-                  >
-                    {frequencies.map((freq) => (
-                      <option key={freq} value={freq}>
-                        {freq}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="text-sm text-gray-700 font-medium block mb-2">Durée</label>
-                  <input
-                    type="text"
-                    value={newMedDuration}
-                    onChange={(e) => setNewMedDuration(e.target.value)}
-                    placeholder="Ex: 7 jours"
-                    className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white focus:outline-none focus:border-blue-500"
-                  />
-                </div>
+              <div className="flex-1">
+                <p className="font-medium text-gray-900">{selectedPatient.prenom} {selectedPatient.nom}</p>
+                <p className="text-xs text-gray-500">{selectedPatient.telephone}</p>
               </div>
-
-              <button
-                type="button"
-                onClick={addMedication}
-                className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium flex items-center justify-center gap-2"
-              >
-                <Plus className="w-4 h-4" />
-                Ajouter le médicament
+              <button type="button" onClick={() => setSelectedPatient(null)}
+                className="p-1 hover:bg-red-100 rounded-full">
+                <X className="w-4 h-4 text-red-600" />
               </button>
             </div>
-          </div>
-
-          {/* Medications List */}
-          {medications.length > 0 && (
-            <div className="space-y-2">
-              {medications.map((med) => (
-                <div key={med.id} className="bg-white rounded-lg p-4 border border-gray-200 flex items-start justify-between">
-                  <div className="flex items-start gap-3 flex-1">
-                    <div className="w-10 h-10 rounded-lg bg-green-50 flex items-center justify-center flex-shrink-0">
-                      <Pill className="w-5 h-5 text-green-600" />
-                    </div>
-                    <div className="flex-1">
-                      <p className="font-semibold text-gray-900">{med.name}</p>
-                      <div className="flex items-center gap-4 mt-1">
-                        <span className="text-xs text-gray-600 bg-gray-100 px-2 py-1 rounded">
-                          {med.dosage}
-                        </span>
-                        <span className="text-xs text-gray-600 bg-gray-100 px-2 py-1 rounded">
-                          {med.frequency}
-                        </span>
-                        <span className="text-xs text-gray-600 bg-gray-100 px-2 py-1 rounded">
-                          {med.duration}
-                        </span>
+          ) : (
+            <div className="relative">
+              <div className="flex items-center gap-2 px-4 py-2.5 border border-gray-300 rounded-xl">
+                <User className="w-4 h-4 text-gray-400 shrink-0" />
+                <input
+                  type="text"
+                  value={patientSearch}
+                  onChange={(e) => { setPatientSearch(e.target.value); setShowPatientDrop(true); }}
+                  onFocus={() => setShowPatientDrop(true)}
+                  placeholder="Rechercher un patient par nom ou téléphone…"
+                  className="flex-1 bg-transparent outline-none text-sm"
+                />
+              </div>
+              {showPatientDrop && filteredPatients.length > 0 && (
+                <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-lg z-10 max-h-48 overflow-y-auto">
+                  {filteredPatients.map((p) => (
+                    <button key={p.id} type="button"
+                      onClick={() => { setSelectedPatient(p); setPatientSearch(""); setShowPatientDrop(false); }}
+                      className="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center gap-3 border-b border-gray-100 last:border-0">
+                      <div className="w-8 h-8 bg-red-100 text-red-600 rounded-full flex items-center justify-center font-bold text-sm">
+                        {p.prenom.charAt(0)}
                       </div>
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => removeMedication(med.id)}
-                    className="ml-2 p-2 hover:bg-red-50 rounded-lg transition"
-                  >
-                    <X className="w-5 h-5 text-red-600" />
-                  </button>
+                      <div>
+                        <p className="text-sm font-medium text-gray-900">{p.prenom} {p.nom}</p>
+                        <p className="text-xs text-gray-500">{p.telephone}</p>
+                      </div>
+                    </button>
+                  ))}
                 </div>
-              ))}
+              )}
             </div>
           )}
         </div>
 
-        {/* Notes */}
+        {/* Ajouter médicament */}
         <div className="px-6 py-4 border-b border-gray-100">
-          <label className="text-sm text-gray-700 font-medium block mb-2">Notes supplémentaires</label>
-          <textarea
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            placeholder="Ex: À prendre avec les repas, Éviter l'alcool, etc."
-            rows={4}
-            className="w-full px-4 py-2 rounded-lg border border-gray-300 bg-white focus:outline-none focus:border-blue-500 resize-none"
-          />
+          <h2 className="font-semibold text-gray-900 mb-3">Ajouter un médicament</h2>
+          <div className="bg-blue-50 rounded-xl p-4 border border-blue-200 space-y-3">
+            {/* Médicament search */}
+            <div className="relative">
+              <div className="flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-300 rounded-xl">
+                <Search className="w-4 h-4 text-gray-400 shrink-0" />
+                <input
+                  type="text"
+                  value={selectedMed ? selectedMed.nomCommercial : medSearch}
+                  onChange={(e) => { setMedSearch(e.target.value); setSelectedMed(null); setShowMedDrop(true); }}
+                  onFocus={() => setShowMedDrop(true)}
+                  placeholder="Saisir un médicament…"
+                  className="flex-1 bg-transparent outline-none text-sm"
+                />
+                {selectedMed && (
+                  <button type="button" onClick={() => { setSelectedMed(null); setMedSearch(""); }}
+                    className="p-1 hover:bg-gray-100 rounded-full">
+                    <X className="w-3 h-3 text-gray-500" />
+                  </button>
+                )}
+              </div>
+              {showMedDrop && !selectedMed && filteredMeds.length > 0 && (
+                <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-lg z-10 max-h-48 overflow-y-auto">
+                  {filteredMeds.map((m) => (
+                    <button key={m.id} type="button"
+                      onClick={() => { setSelectedMed(m); setMedSearch(""); setShowMedDrop(false); }}
+                      className="w-full px-4 py-2.5 text-left hover:bg-gray-50 border-b border-gray-100 last:border-0">
+                      <p className="text-sm font-medium text-gray-900">{m.nomCommercial}</p>
+                      <p className="text-xs text-gray-500">{m.dosage} {m.forme}</p>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs font-medium text-gray-600 block mb-1">Quantité</label>
+                <input type="number" min={1} value={quantite}
+                  onChange={(e) => setQuantite(parseInt(e.target.value) || 1)}
+                  className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-sm focus:outline-none focus:border-blue-500" />
+              </div>
+              <div>
+                <label className="text-xs font-medium text-gray-600 block mb-1">Durée</label>
+                <input type="text" value={duree}
+                  onChange={(e) => setDuree(e.target.value)}
+                  placeholder="Ex : 7 jours"
+                  className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-sm focus:outline-none focus:border-blue-500" />
+              </div>
+            </div>
+
+            <div>
+              <label className="text-xs font-medium text-gray-600 block mb-1">Posologie</label>
+              <input type="text" value={posologie}
+                onChange={(e) => setPosologie(e.target.value)}
+                placeholder="Ex : 1 comprimé matin et soir"
+                className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-sm focus:outline-none focus:border-blue-500" />
+            </div>
+
+            <div>
+              <label className="text-xs font-medium text-gray-600 block mb-1">Instructions</label>
+              <input type="text" value={instructions}
+                onChange={(e) => setInstructions(e.target.value)}
+                placeholder="Ex : À prendre pendant les repas"
+                className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-sm focus:outline-none focus:border-blue-500" />
+            </div>
+
+            <button type="button" onClick={addLigne} disabled={!selectedMed}
+              className="w-full py-2.5 bg-blue-600 text-white rounded-xl font-medium text-sm flex items-center justify-center gap-2 disabled:opacity-50 transition hover:bg-blue-700">
+              <Plus className="w-4 h-4" />
+              Ajouter ce médicament
+            </button>
+          </div>
         </div>
 
+        {/* Lignes ajoutées */}
+        {lignes.length > 0 && (
+          <div className="px-6 py-4 border-b border-gray-100">
+            <h2 className="font-semibold text-gray-900 mb-3">Médicaments ({lignes.length})</h2>
+            <div className="space-y-2">
+              {lignes.map((l) => (
+                <div key={l.tempId} className="bg-white rounded-xl p-3 border border-gray-200 flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-green-50 flex items-center justify-center shrink-0">
+                    <Pill className="w-5 h-5 text-green-600" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-gray-900 text-sm">{l.medicament.nomCommercial}</p>
+                    <div className="flex flex-wrap gap-1.5 mt-1">
+                      <span className="text-xs bg-gray-100 text-gray-700 px-2 py-0.5 rounded">qté : {l.quantite}</span>
+                      {l.posologie && <span className="text-xs bg-gray-100 text-gray-700 px-2 py-0.5 rounded">{l.posologie}</span>}
+                      {l.duree && <span className="text-xs bg-gray-100 text-gray-700 px-2 py-0.5 rounded">{l.duree}</span>}
+                    </div>
+                  </div>
+                  <button type="button" onClick={() => removeLigne(l.tempId)}
+                    className="p-1.5 hover:bg-red-50 rounded-lg transition">
+                    <X className="w-4 h-4 text-red-500" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {error && (
+          <div className="mx-6 mt-4 p-3 bg-red-50 text-red-600 rounded-xl text-sm text-center">{error}</div>
+        )}
+
         {/* Actions */}
-        <div className="px-6 py-4 bg-white border-t border-gray-100 flex gap-3 sticky bottom-0">
-          <button
-            type="button"
-            onClick={onClose}
-            className="flex-1 px-4 py-3 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition"
-          >
+        <div className="px-6 py-4 bg-white border-t border-gray-100 flex gap-3 sticky bottom-0 mt-auto">
+          <button type="button" onClick={onClose}
+            className="flex-1 px-4 py-3 border border-gray-300 text-gray-700 font-medium rounded-xl hover:bg-gray-50 transition">
             Annuler
           </button>
-          <button
-            type="submit"
-            className="flex-1 px-4 py-3 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 transition flex items-center justify-center gap-2"
-          >
+          <button type="submit" disabled={submitting}
+            className="flex-1 px-4 py-3 bg-green-600 text-white font-medium rounded-xl hover:bg-green-700 disabled:opacity-60 transition flex items-center justify-center gap-2">
             <Check className="w-5 h-5" />
-            Créer et envoyer
+            {submitting ? "Envoi…" : "Créer l'ordonnance"}
           </button>
         </div>
       </form>

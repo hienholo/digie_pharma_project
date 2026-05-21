@@ -1,6 +1,8 @@
 import type {
   CreatePatientPayload, CreateDemandePayload, CreateCommandePayload,
+  CreateOrdonnanceNumeriquePayload,
   PatientAPI, PharmacieAPI, OrdonnanceAPI, MedicamentAPI,
+  MedecinAPI, OrdonnanceNumeriqueAPI,
   DemandeAPI, DemandeReponseAPI, DemandeEnAttenteAPI,
   CommandeAPI, CommandePharmacieAPI, LivraisonAPI, NotificationAPI,
   LoginResponse,
@@ -230,6 +232,29 @@ export const livraisonsApi = {
 
   confirmer: (id: string) =>
     http<LivraisonAPI>(`/livraisons/${id}/confirmer`, { method: "PATCH" }),
+};
+
+// ── Médecins ──────────────────────────────────────────────────────────────────
+
+export const medecinsApi = {
+  getById: (id: string) =>
+    http<MedecinAPI>(`/medecins/${id}`),
+
+  getAll: () =>
+    http<MedecinAPI[]>("/medecins"),
+};
+
+// ── Ordonnances numériques (médecin) ──────────────────────────────────────────
+
+export const ordonnancesNumeriquesApi = {
+  getByMedecin: (medecinId: string) =>
+    http<OrdonnanceNumeriqueAPI[]>(`/ordonnances-numeriques/medecin/${medecinId}`),
+
+  rediger: (payload: CreateOrdonnanceNumeriquePayload) =>
+    http<OrdonnanceNumeriqueAPI>("/ordonnances-numeriques", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
 };
 
 // ── Notifications ─────────────────────────────────────────────────────────────

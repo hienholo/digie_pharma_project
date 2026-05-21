@@ -1,5 +1,48 @@
 // ── Types API LAHFIA (alignés sur le MCD backend réel) ───────────────────────
 
+export interface MedecinAPI {
+  id: string;
+  nom: string;
+  prenom: string;
+  email: string;
+  telephone: string;
+  specialite: string;
+  statut: "EN_ATTENTE_VALIDATION" | "ACTIF" | "SUSPENDU";
+  adresseCabinet?: string;
+  latitude?: number;
+  longitude?: number;
+  createdAt?: string;
+}
+
+export interface LigneOrdonnanceAPI {
+  id: string;
+  medicament: MedicamentAPI;
+  quantite: number;
+  posologie?: string;
+  duree?: string;
+  instructions?: string;
+}
+
+export interface OrdonnanceNumeriqueAPI {
+  id: string;
+  source: "MEDECIN";
+  statut: "NUMERIQUE";
+  createdAt: string;
+  lignes: LigneOrdonnanceAPI[];
+}
+
+export interface CreateOrdonnanceNumeriquePayload {
+  medecinId: string;
+  patientId: string;
+  lignes: {
+    medicamentId: string;
+    quantite: number;
+    posologie?: string;
+    duree?: string;
+    instructions?: string;
+  }[];
+}
+
 export interface PatientAPI {
   id: string;
   nom: string;

@@ -1,169 +1,132 @@
 import { useState } from "react";
-import { Calendar, Clock, User, Check, X, ChevronRight, Plus, MapPin, Phone } from "lucide-react";
-import { mockAppointments } from "../datamock/doctor.mock";
-import type { Appointment } from "../datamock/doctor.mock";
+import { Calendar, Clock, Phone, Check, X, ChevronRight, Plus } from "lucide-react";
+
+interface Appointment {
+  id: string;
+  patientName: string;
+  patientPhone: string;
+  date: string;
+  time: string;
+  duration: string;
+  status: "pending" | "confirmed" | "completed" | "cancelled";
+  reason: string;
+  notes: string;
+}
+
+const STATUS_COLORS: Record<Appointment["status"], { bg: string; text: string }> = {
+  pending:   { bg: "#FEF3C7", text: "#D97706" },
+  confirmed: { bg: "#DCFCE7", text: "#16A34A" },
+  completed: { bg: "#DBEAFE", text: "#0284C7" },
+  cancelled: { bg: "#FEE2E2", text: "#DC2626" },
+};
+
+const STATUS_LABELS: Record<Appointment["status"], string> = {
+  pending:   "En attente",
+  confirmed: "Confirmé",
+  completed: "Complété",
+  cancelled: "Annulé",
+};
 
 export function DoctorAppointments() {
-  const [appointments, setAppointments] = useState<Appointment[]>(mockAppointments);
-  const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
-  const [showCreateForm, setShowCreateForm] = useState(false);
-  const [filterStatus, setFilterStatus] = useState<"all" | "pending" | "confirmed">("all");
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [selected, setSelected] = useState<Appointment | null>(null);
+  const [showCreate, setShowCreate] = useState(false);
+  const [filterStatus, setFilterStatus] = useState<"all" | Appointment["status"]>("all");
 
-  const handleConfirmAppointment = (id: string) => {
-    setAppointments(appointments.map((apt) =>
-      apt.id === id ? { ...apt, status: "confirmed" as const } : apt
-    ));
+  // Create form state
+  const [newPatient, setNewPatient] = useState("");
+  const [newPhone, setNewPhone] = useState("");
+  const [newDate, setNewDate] = useState("");
+  const [newTime, setNewTime] = useState("");
+  const [newReason, setNewReason] = useState("");
+
+  const confirm = (id: string) =>
+    setAppointments((prev) => prev.map((a) => a.id === id ? { ...a, status: "confirmed" } : a));
+
+  const cancel = (id: string) =>
+    setAppointments((prev) => prev.map((a) => a.id === id ? { ...a, status: "cancelled" } : a));
+
+  const createAppointment = () => {
+    if (!newPatient.trim() || !newDate || !newTime) return;
+    const apt: Appointment = {
+      id: Date.now().toString(),
+      patientName: newPatient,
+      patientPhone: newPhone,
+      date: new Date(newDate).toLocaleDateString("fr-FR"),
+      time: newTime,
+      duration: "30 min",
+      status: "pending",
+      reason: newReason || "Consultation",
+      notes: "",
+    };
+    setAppointments((prev) => [apt, ...prev]);
+    setNewPatient(""); setNewPhone(""); setNewDate(""); setNewTime(""); setNewReason("");
+    setShowCreate(false);
   };
 
-  const handleCancelAppointment = (id: string) => {
-    setAppointments(appointments.map((apt) =>
-      apt.id === id ? { ...apt, status: "cancelled" as const } : apt
-    ));
-  };
+  const filtered = appointments.filter((a) => filterStatus === "all" || a.status === filterStatus);
 
-  const filteredAppointments = appointments.filter((apt) => {
-    if (filterStatus === "all") return true;
-    return apt.status === filterStatus;
-  });
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "pending":
-        return { bg: "#FEF3C7", text: "#D97706" };
-      case "confirmed":
-        return { bg: "#DCFCE7", text: "#16A34A" };
-      case "completed":
-        return { bg: "#DBEAFE", text: "#0284C7" };
-      case "cancelled":
-        return { bg: "#FEE2E2", text: "#DC2626" };
-      default:
-        return { bg: "#F3F4F6", text: "#6B7280" };
-    }
-  };
-
-  if (selectedAppointment) {
-    const colors = getStatusColor(selectedAppointment.status);
+  if (selected) {
+    const colors = STATUS_COLORS[selected.status];
     return (
       <div className="flex-1 flex flex-col overflow-y-auto">
-        {/* Header */}
         <div className="bg-gradient-to-r from-blue-50 to-blue-100 p-6 border-b border-blue-100">
           <div className="flex items-start gap-4">
-            <div className="w-16 h-16 rounded-full flex items-center justify-center text-2xl font-bold" style={{ backgroundColor: colors.bg }}>
-              {selectedAppointment.patientName.charAt(0)}
+            <div className="w-16 h-16 rounded-full flex items-center justify-center text-2xl font-bold text-white" style={{ backgroundColor: colors.text }}>
+              {selected.patientName.charAt(0)}
             </div>
             <div className="flex-1">
-              <h1 className="text-2xl font-bold text-gray-900">{selectedAppointment.patientName}</h1>
-              <p className="text-sm text-gray-600 mt-1">Détails du rendez-vous</p>
+              <h1 className="text-2xl font-bold text-gray-900">{selected.patientName}</h1>
+              <span className="inline-block mt-1 px-3 py-1 rounded-full text-sm font-semibold" style={{ backgroundColor: colors.bg, color: colors.text }}>
+                {STATUS_LABELS[selected.status]}
+              </span>
             </div>
-            <button
-              onClick={() => setSelectedAppointment(null)}
-              className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition"
-            >
+            <button onClick={() => setSelected(null)}
+              className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition">
               Retour
             </button>
           </div>
         </div>
 
-        {/* Appointment Details */}
-        <div className="flex-1 overflow-y-auto p-6">
-          {/* Status Badge */}
-          <div className="mb-6">
-            <span
-              className="px-4 py-2 rounded-full text-sm font-semibold"
-              style={{ backgroundColor: colors.bg, color: colors.text }}
-            >
-              {selectedAppointment.status === "pending" && "En attente de confirmation"}
-              {selectedAppointment.status === "confirmed" && "Confirmé"}
-              {selectedAppointment.status === "completed" && "Complété"}
-              {selectedAppointment.status === "cancelled" && "Annulé"}
-            </span>
-          </div>
-
-          {/* Appointment Info */}
-          <div className="bg-white rounded-2xl p-6 mb-6 border border-gray-100">
-            <h2 className="font-semibold text-gray-900 mb-4">Informations</h2>
-            <div className="space-y-4">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-lg bg-blue-50 flex items-center justify-center">
-                  <Calendar className="w-6 h-6 text-blue-600" />
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600">Date</p>
-                  <p className="font-semibold text-gray-900">{selectedAppointment.date}</p>
-                </div>
+        <div className="p-6 space-y-4">
+          <div className="bg-white rounded-2xl p-6 border border-gray-100 space-y-4">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-lg bg-blue-50 flex items-center justify-center">
+                <Calendar className="w-6 h-6 text-blue-600" />
               </div>
-
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-lg bg-green-50 flex items-center justify-center">
-                  <Clock className="w-6 h-6 text-green-600" />
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600">Heure</p>
-                  <p className="font-semibold text-gray-900">
-                    {selectedAppointment.time} ({selectedAppointment.duration})
-                  </p>
-                </div>
+              <div>
+                <p className="text-sm text-gray-600">Date</p>
+                <p className="font-semibold text-gray-900">{selected.date} à {selected.time} ({selected.duration})</p>
               </div>
-
+            </div>
+            {selected.patientPhone && (
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 rounded-lg bg-red-50 flex items-center justify-center">
                   <Phone className="w-6 h-6 text-red-600" />
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600">Contact</p>
-                  <p className="font-semibold text-gray-900">{selectedAppointment.patientPhone}</p>
+                  <p className="text-sm text-gray-600">Téléphone</p>
+                  <p className="font-semibold text-gray-900">{selected.patientPhone}</p>
                 </div>
               </div>
+            )}
+            <div>
+              <p className="text-sm text-gray-600 mb-1">Motif</p>
+              <p className="font-medium text-gray-900">{selected.reason}</p>
             </div>
           </div>
 
-          {/* Reason & Notes */}
-          <div className="bg-white rounded-2xl p-6 mb-6 border border-gray-100">
-            <h2 className="font-semibold text-gray-900 mb-4">Détails</h2>
-            <div className="space-y-4">
-              <div>
-                <p className="text-sm text-gray-600 mb-2">Motif de la consultation</p>
-                <p className="font-medium text-gray-900">{selectedAppointment.reason}</p>
-              </div>
-              {selectedAppointment.notes && (
-                <div>
-                  <p className="text-sm text-gray-600 mb-2">Notes</p>
-                  <p className="text-gray-700 bg-gray-50 p-3 rounded-lg">{selectedAppointment.notes}</p>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Actions */}
-          {selectedAppointment.status === "pending" && (
-            <div className="grid grid-cols-2 gap-3 mb-6">
-              <button
-                onClick={() => {
-                  handleConfirmAppointment(selectedAppointment.id);
-                  setSelectedAppointment(null);
-                }}
-                className="bg-green-600 text-white rounded-lg py-3 font-medium hover:bg-green-700 transition flex items-center justify-center gap-2"
-              >
-                <Check className="w-5 h-5" />
-                Confirmer
+          {selected.status === "pending" && (
+            <div className="grid grid-cols-2 gap-3">
+              <button onClick={() => { confirm(selected.id); setSelected(null); }}
+                className="bg-green-600 text-white rounded-lg py-3 font-medium hover:bg-green-700 transition flex items-center justify-center gap-2">
+                <Check className="w-5 h-5" /> Confirmer
               </button>
-              <button
-                onClick={() => {
-                  handleCancelAppointment(selectedAppointment.id);
-                  setSelectedAppointment(null);
-                }}
-                className="bg-red-600 text-white rounded-lg py-3 font-medium hover:bg-red-700 transition flex items-center justify-center gap-2"
-              >
-                <X className="w-5 h-5" />
-                Annuler
+              <button onClick={() => { cancel(selected.id); setSelected(null); }}
+                className="bg-red-600 text-white rounded-lg py-3 font-medium hover:bg-red-700 transition flex items-center justify-center gap-2">
+                <X className="w-5 h-5" /> Annuler
               </button>
             </div>
-          )}
-
-          {selectedAppointment.status === "confirmed" && (
-            <button className="w-full bg-blue-600 text-white rounded-lg py-3 font-medium hover:bg-blue-700 transition">
-              Voir le dossier du patient
-            </button>
           )}
         </div>
       </div>
@@ -173,128 +136,102 @@ export function DoctorAppointments() {
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
       {/* Filter & Create */}
-      <div className="px-6 py-4 bg-white border-b border-gray-100 flex items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => setFilterStatus("all")}
-            className={`px-4 py-2 rounded-lg font-medium transition ${
-              filterStatus === "all"
-                ? "bg-blue-600 text-white"
-                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-            }`}
-          >
-            Tous
-          </button>
-          <button
-            onClick={() => setFilterStatus("pending")}
-            className={`px-4 py-2 rounded-lg font-medium transition ${
-              filterStatus === "pending"
-                ? "bg-amber-600 text-white"
-                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-            }`}
-          >
-            En attente
-          </button>
-          <button
-            onClick={() => setFilterStatus("confirmed")}
-            className={`px-4 py-2 rounded-lg font-medium transition ${
-              filterStatus === "confirmed"
-                ? "bg-green-600 text-white"
-                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-            }`}
-          >
-            Confirmés
-          </button>
+      <div className="px-6 py-4 bg-white border-b border-gray-100 flex items-center justify-between gap-4 flex-wrap">
+        <div className="flex items-center gap-2 flex-wrap">
+          {(["all", "pending", "confirmed"] as const).map((f) => (
+            <button key={f} onClick={() => setFilterStatus(f)}
+              className={`px-4 py-2 rounded-lg font-medium transition text-sm ${
+                filterStatus === f
+                  ? f === "all" ? "bg-blue-600 text-white" : f === "pending" ? "bg-amber-600 text-white" : "bg-green-600 text-white"
+                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+              }`}>
+              {f === "all" ? "Tous" : f === "pending" ? "En attente" : "Confirmés"}
+            </button>
+          ))}
         </div>
-        <button
-          onClick={() => setShowCreateForm(!showCreateForm)}
-          className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition flex items-center gap-2"
-        >
+        <button onClick={() => setShowCreate(!showCreate)}
+          className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition flex items-center gap-2 text-sm">
           <Plus className="w-4 h-4" />
           <span className="hidden sm:inline">Créer RDV</span>
         </button>
       </div>
 
-      {/* Create Form */}
-      {showCreateForm && (
+      {/* Create form */}
+      {showCreate && (
         <div className="px-6 py-4 bg-blue-50 border-b border-blue-200">
-          <h3 className="font-semibold text-gray-900 mb-4">Créer un nouveau rendez-vous</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <input type="text" placeholder="Nom du patient" className="px-3 py-2 border border-gray-300 rounded-lg" />
-            <input type="date" className="px-3 py-2 border border-gray-300 rounded-lg" />
-            <input type="time" className="px-3 py-2 border border-gray-300 rounded-lg" />
-            <input type="text" placeholder="Motif de consultation" className="px-3 py-2 border border-gray-300 rounded-lg" />
+          <h3 className="font-semibold text-gray-900 mb-3">Nouveau rendez-vous</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <input type="text" placeholder="Nom du patient *" value={newPatient} onChange={(e) => setNewPatient(e.target.value)}
+              className="px-3 py-2 border border-gray-300 rounded-lg text-sm" />
+            <input type="tel" placeholder="Téléphone" value={newPhone} onChange={(e) => setNewPhone(e.target.value)}
+              className="px-3 py-2 border border-gray-300 rounded-lg text-sm" />
+            <input type="date" value={newDate} onChange={(e) => setNewDate(e.target.value)}
+              className="px-3 py-2 border border-gray-300 rounded-lg text-sm" />
+            <input type="time" value={newTime} onChange={(e) => setNewTime(e.target.value)}
+              className="px-3 py-2 border border-gray-300 rounded-lg text-sm" />
+            <input type="text" placeholder="Motif de consultation" value={newReason} onChange={(e) => setNewReason(e.target.value)}
+              className="md:col-span-2 px-3 py-2 border border-gray-300 rounded-lg text-sm" />
           </div>
-          <div className="flex gap-3 mt-4">
-            <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
+          <div className="flex gap-3 mt-3">
+            <button onClick={createAppointment} disabled={!newPatient.trim() || !newDate || !newTime}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm disabled:opacity-50">
               Créer
             </button>
-            <button
-              onClick={() => setShowCreateForm(false)}
-              className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
-            >
+            <button onClick={() => setShowCreate(false)}
+              className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 text-sm">
               Annuler
             </button>
           </div>
         </div>
       )}
 
-      {/* Appointments List */}
+      {/* List */}
       <div className="flex-1 overflow-y-auto">
-        <div className="divide-y divide-gray-100">
-          {filteredAppointments.length > 0 ? (
-            filteredAppointments.map((appointment) => {
-              const colors = getStatusColor(appointment.status);
+        {filtered.length > 0 ? (
+          <div className="divide-y divide-gray-100">
+            {filtered.map((a) => {
+              const colors = STATUS_COLORS[a.status];
               return (
-                <button
-                  key={appointment.id}
-                  onClick={() => setSelectedAppointment(appointment)}
-                  className="w-full px-6 py-4 hover:bg-gray-50 transition text-left border-l-4 border-transparent hover:border-blue-600"
-                >
+                <button key={a.id} onClick={() => setSelected(a)}
+                  className="w-full px-6 py-4 hover:bg-gray-50 transition text-left border-l-4 border-transparent hover:border-blue-600">
                   <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 rounded-full flex items-center justify-center font-bold text-white" style={{ backgroundColor: colors.text }}>
-                          {appointment.patientName.charAt(0)}
-                        </div>
-                        <div className="flex-1">
-                          <p className="font-semibold text-gray-900">{appointment.patientName}</p>
-                          <p className="text-xs text-gray-500 mt-0.5">{appointment.reason}</p>
-                        </div>
+                    <div className="flex items-center gap-3 flex-1">
+                      <div className="w-12 h-12 rounded-full flex items-center justify-center font-bold text-white" style={{ backgroundColor: colors.text }}>
+                        {a.patientName.charAt(0)}
+                      </div>
+                      <div className="flex-1">
+                        <p className="font-semibold text-gray-900">{a.patientName}</p>
+                        <p className="text-xs text-gray-500 mt-0.5">{a.reason}</p>
                       </div>
                     </div>
-                    <div className="text-right ml-4">
-                      <p className="text-xs text-gray-500">{appointment.date}</p>
-                      <p className="text-sm font-semibold text-gray-900">{appointment.time}</p>
+                    <div className="text-right ml-4 shrink-0">
+                      <p className="text-xs text-gray-500">{a.date}</p>
+                      <p className="text-sm font-semibold text-gray-900">{a.time}</p>
                     </div>
                     <ChevronRight className="w-5 h-5 text-gray-400 ml-2" />
                   </div>
-
-                  {/* Status & Duration */}
-                  <div className="flex items-center gap-2 mt-3">
-                    <span
-                      className="text-xs font-semibold px-2 py-1 rounded"
-                      style={{ backgroundColor: colors.bg, color: colors.text }}
-                    >
-                      {appointment.status === "pending" && "En attente"}
-                      {appointment.status === "confirmed" && "Confirmé"}
-                      {appointment.status === "completed" && "Complété"}
-                      {appointment.status === "cancelled" && "Annulé"}
+                  <div className="flex items-center gap-2 mt-2">
+                    <span className="text-xs font-semibold px-2 py-1 rounded" style={{ backgroundColor: colors.bg, color: colors.text }}>
+                      {STATUS_LABELS[a.status]}
                     </span>
                     <span className="text-xs text-gray-500 flex items-center gap-1">
-                      <Clock className="w-3 h-3" /> {appointment.duration}
+                      <Clock className="w-3 h-3" /> {a.duration}
                     </span>
                   </div>
                 </button>
               );
-            })
-          ) : (
-            <div className="flex flex-col items-center justify-center p-12 text-center">
-              <Calendar className="w-12 h-12 text-gray-300 mb-4" />
-              <p className="text-gray-500">Aucun rendez-vous trouvé</p>
-            </div>
-          )}
-        </div>
+            })}
+          </div>
+        ) : (
+          <div className="flex flex-col items-center justify-center p-12 text-center">
+            <Calendar className="w-12 h-12 text-gray-300 mb-4" />
+            <p className="text-gray-500">Aucun rendez-vous</p>
+            <button onClick={() => setShowCreate(true)}
+              className="mt-3 text-sm text-blue-600 hover:underline">
+              Créer un premier RDV
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
