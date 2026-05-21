@@ -9,14 +9,15 @@ CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
 -- ── 1. patients ───────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS patients (
-    id          UUID          PRIMARY KEY DEFAULT gen_random_uuid(),
-    nom         VARCHAR(255)  NOT NULL,
-    prenom      VARCHAR(255)  NOT NULL,
-    telephone   VARCHAR(20)   NOT NULL UNIQUE,
-    email       VARCHAR(255)  UNIQUE,
-    latitude    DOUBLE PRECISION,
-    longitude   DOUBLE PRECISION,
-    created_at  TIMESTAMP     DEFAULT NOW()
+    id            UUID          PRIMARY KEY DEFAULT gen_random_uuid(),
+    nom           VARCHAR(255)  NOT NULL,
+    prenom        VARCHAR(255)  NOT NULL,
+    telephone     VARCHAR(20)   NOT NULL UNIQUE,
+    email         VARCHAR(255)  UNIQUE,
+    password_hash VARCHAR(255),
+    latitude      DOUBLE PRECISION,
+    longitude     DOUBLE PRECISION,
+    created_at    TIMESTAMP     DEFAULT NOW()
 );
 
 -- ── 2. pharmacies ─────────────────────────────────────────────
@@ -26,7 +27,9 @@ CREATE TABLE IF NOT EXISTS pharmacies (
     adresse          VARCHAR(500)  NOT NULL,
     latitude         DOUBLE PRECISION NOT NULL,
     longitude        DOUBLE PRECISION NOT NULL,
+    email            VARCHAR(255)  UNIQUE,
     telephone        VARCHAR(20),
+    password_hash    VARCHAR(255),
     livraison_active BOOLEAN       NOT NULL DEFAULT FALSE,
     created_at       TIMESTAMP     DEFAULT NOW()
 );
@@ -48,6 +51,7 @@ CREATE TABLE IF NOT EXISTS medecins (
     statut          VARCHAR(30)  NOT NULL DEFAULT 'EN_ATTENTE_VALIDATION'
                         CHECK (statut IN ('EN_ATTENTE_VALIDATION','ACTIF','SUSPENDU')),
     adresse_cabinet VARCHAR(500),
+    password_hash   VARCHAR(255),
     latitude        DOUBLE PRECISION,
     longitude       DOUBLE PRECISION,
     created_at      TIMESTAMP    DEFAULT NOW()
@@ -68,6 +72,7 @@ CREATE TABLE IF NOT EXISTS livreurs (
     partenaire_logistique_id  UUID,
     disponibilite_statut      VARCHAR(20)  NOT NULL DEFAULT 'HORS_LIGNE'
                                   CHECK (disponibilite_statut IN ('DISPONIBLE','EN_COURSE','HORS_LIGNE')),
+    password_hash             VARCHAR(255),
     latitude                  DOUBLE PRECISION,
     longitude                 DOUBLE PRECISION,
     created_at                TIMESTAMP    DEFAULT NOW()
@@ -150,7 +155,7 @@ CREATE TABLE IF NOT EXISTS commandes (
     mode_obtention  VARCHAR(20)  NOT NULL CHECK (mode_obtention IN ('RETRAIT','LIVRAISON')),
     statut          VARCHAR(30)  NOT NULL DEFAULT 'EN_PREPARATION'
                         CHECK (statut IN ('EN_PREPARATION','PRETE','EN_LIVRAISON','TERMINEE','ANNULEE')),
-    mode_paiement   VARCHAR(30)  CHECK (mode_paiement IN ('A_LA_LIVRAISON','EN_LIGNE')),
+    mode_paiement   VARCHAR(30)  CHECK (mode_paiement IN ('ESPECES','CARTE')),
     created_at      TIMESTAMP    DEFAULT NOW()
 );
 
