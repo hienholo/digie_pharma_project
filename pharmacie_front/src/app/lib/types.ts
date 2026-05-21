@@ -31,6 +31,32 @@ export interface OrdonnanceNumeriqueAPI {
   lignes: LigneOrdonnanceAPI[];
 }
 
+export interface RendezVousAPI {
+  id: string;
+  statut: "EN_ATTENTE" | "CONFIRME" | "COMPLETE" | "ANNULE";
+  dateRdv: string;
+  heure: string;
+  motif?: string;
+  createdAt: string;
+  patientId: string;
+  patientPrenom: string;
+  patientNom: string;
+  patientTelephone: string;
+  medecinId: string;
+  medecinPrenom: string;
+  medecinNom: string;
+  medecinSpecialite: string;
+  medecinAdresse?: string;
+}
+
+export interface CreateRendezVousPayload {
+  patientId: string;
+  medecinId: string;
+  dateRdv: string;
+  heure: string;
+  motif?: string;
+}
+
 export interface CreateOrdonnanceNumeriquePayload {
   medecinId: string;
   patientId: string;

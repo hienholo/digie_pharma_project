@@ -224,6 +224,19 @@ CREATE TABLE IF NOT EXISTS indisponibilites_ponctuelles (
     motif       VARCHAR(255)
 );
 
+-- ── 17. rendez_vous ──────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS rendez_vous (
+    id          UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
+    patient_id  UUID         NOT NULL REFERENCES patients(id) ON DELETE CASCADE,
+    medecin_id  UUID         NOT NULL REFERENCES medecins(id) ON DELETE CASCADE,
+    date_rdv    DATE         NOT NULL,
+    heure       VARCHAR(8)   NOT NULL,
+    statut      VARCHAR(20)  NOT NULL DEFAULT 'EN_ATTENTE'
+                    CHECK (statut IN ('EN_ATTENTE','CONFIRME','COMPLETE','ANNULE')),
+    motif       VARCHAR(500),
+    created_at  TIMESTAMP    DEFAULT NOW()
+);
+
 -- ── Index de performance ──────────────────────────────────────
 CREATE INDEX IF NOT EXISTS idx_ordonnances_patient        ON ordonnances(patient_id);
 CREATE INDEX IF NOT EXISTS idx_ordonnances_medecin        ON ordonnances(medecin_id);
@@ -237,3 +250,6 @@ CREATE INDEX IF NOT EXISTS idx_notifications_destinataire ON notifications(desti
 CREATE INDEX IF NOT EXISTS idx_disponibilites_medecin     ON disponibilites_medecin(medecin_id);
 CREATE INDEX IF NOT EXISTS idx_reponses_demande           ON demande_pharmacie_reponses(demande_id);
 CREATE INDEX IF NOT EXISTS idx_reponses_pharmacie         ON demande_pharmacie_reponses(pharmacie_id);
+CREATE INDEX IF NOT EXISTS idx_rdv_medecin                ON rendez_vous(medecin_id);
+CREATE INDEX IF NOT EXISTS idx_rdv_patient                ON rendez_vous(patient_id);
+CREATE INDEX IF NOT EXISTS idx_rdv_statut                 ON rendez_vous(statut);

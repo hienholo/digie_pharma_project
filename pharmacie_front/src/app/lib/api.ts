@@ -1,8 +1,8 @@
 import type {
   CreatePatientPayload, CreateDemandePayload, CreateCommandePayload,
-  CreateOrdonnanceNumeriquePayload,
+  CreateOrdonnanceNumeriquePayload, CreateRendezVousPayload,
   PatientAPI, PharmacieAPI, OrdonnanceAPI, MedicamentAPI,
-  MedecinAPI, OrdonnanceNumeriqueAPI,
+  MedecinAPI, OrdonnanceNumeriqueAPI, RendezVousAPI,
   DemandeAPI, DemandeReponseAPI, DemandeEnAttenteAPI,
   CommandeAPI, CommandePharmacieAPI, LivraisonAPI, NotificationAPI,
   LoginResponse,
@@ -255,6 +255,28 @@ export const ordonnancesNumeriquesApi = {
       method: "POST",
       body: JSON.stringify(payload),
     }),
+};
+
+// ── Rendez-vous ───────────────────────────────────────────────────────────────
+
+export const rendezVousApi = {
+  getByMedecin: (medecinId: string) =>
+    http<RendezVousAPI[]>(`/rendez-vous/medecin/${medecinId}`),
+
+  getByPatient: (patientId: string) =>
+    http<RendezVousAPI[]>(`/rendez-vous/patient/${patientId}`),
+
+  creer: (payload: CreateRendezVousPayload) =>
+    http<RendezVousAPI>("/rendez-vous", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
+
+  confirmer: (id: string) =>
+    http<RendezVousAPI>(`/rendez-vous/${id}/confirmer`, { method: "PATCH" }),
+
+  annuler: (id: string) =>
+    http<RendezVousAPI>(`/rendez-vous/${id}/annuler`, { method: "PATCH" }),
 };
 
 // ── Notifications ─────────────────────────────────────────────────────────────
