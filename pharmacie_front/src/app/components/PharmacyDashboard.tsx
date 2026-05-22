@@ -3,10 +3,10 @@ import { RequestList } from "./RequestList";
 import { InventoryPanel } from "./InventoryPanel";
 import {
   Package, Inbox, BarChart3, LogOut, Home, User,
-  MapPin, Star, ChevronRight, Settings, HelpCircle, Shield, Phone,
+  MapPin, Star, ChevronRight, Settings, HelpCircle, Shield, Phone, Bell,
 } from "lucide-react";
 import {
-  pharmaciesApi, demandesApi, commandesApi, medicamentsApi, session,
+  pharmaciesApi, demandesApi, commandesApi, medicamentsApi, notificationsApi, session,
 } from "../lib/api";
 import type { PharmacieAPI, DemandeEnAttenteAPI, CommandePharmacieAPI, MedicamentAPI } from "../lib/types";
 
@@ -14,7 +14,7 @@ import type { PharmacieAPI, DemandeEnAttenteAPI, CommandePharmacieAPI, Medicamen
 export type { DemandeEnAttenteAPI as Request } from "../lib/types";
 export type { MedicamentAPI as InventoryItem } from "../lib/types";
 
-type PharmacyTab = "home" | "requests" | "inventory" | "profile";
+type PharmacyTab = "home" | "requests" | "commandes" | "inventory" | "profile";
 
 type Props = {
   onLogout?: () => void;
@@ -41,26 +41,27 @@ const statutColor: Record<CommandePharmacieAPI["statut"], string> = {
 // ── Bottom navigation ─────────────────────────────────────────────────────────
 
 function PharmacyNav({
-  tab, pendingCount, onTab,
-}: { tab: PharmacyTab; pendingCount: number; onTab: (t: PharmacyTab) => void }) {
+  tab, pendingCount, commandesCount, onTab,
+}: { tab: PharmacyTab; pendingCount: number; commandesCount: number; onTab: (t: PharmacyTab) => void }) {
   const tabs = [
-    { key: "home" as const, icon: Home, label: "Accueil" },
-    { key: "requests" as const, icon: Inbox, label: "Demandes" },
-    { key: "inventory" as const, icon: Package, label: "Stock" },
-    { key: "profile" as const, icon: User, label: "Profil" },
+    { key: "home" as const, icon: Home, label: "Accueil", badge: 0 },
+    { key: "requests" as const, icon: Inbox, label: "Demandes", badge: pendingCount },
+    { key: "commandes" as const, icon: Package, label: "Commandes", badge: commandesCount },
+    { key: "inventory" as const, icon: BarChart3, label: "Stock", badge: 0 },
+    { key: "profile" as const, icon: User, label: "Profil", badge: 0 },
   ];
   return (
     <nav className="shrink-0 bg-white border-t border-gray-200 lg:hidden">
       <div className="flex items-center justify-around px-2 py-2">
-        {tabs.map(({ key, icon: Icon, label }) => {
+        {tabs.map(({ key, icon: Icon, label, badge }) => {
           const active = tab === key;
           return (
             <button key={key} onClick={() => onTab(key)} className="flex flex-col items-center gap-1 flex-1 py-1 relative">
               <div className="relative">
                 <Icon className="w-6 h-6 transition-colors" style={{ color: active ? GREEN : "#9CA3AF" }} />
-                {key === "requests" && pendingCount > 0 && (
+                {badge > 0 && (
                   <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full flex items-center justify-center text-white font-bold bg-red-500" style={{ fontSize: "9px" }}>
-                    {pendingCount > 9 ? "9+" : pendingCount}
+                    {badge > 9 ? "9+" : badge}
                   </span>
                 )}
               </div>
@@ -75,13 +76,14 @@ function PharmacyNav({
 }
 
 function PharmacySidebarNav({
-  tab, pendingCount, onTab, onLogout, pharmacieName,
-}: { tab: PharmacyTab; pendingCount: number; onTab: (t: PharmacyTab) => void; onLogout?: () => void; pharmacieName: string }) {
+  tab, pendingCount, commandesCount, onTab, onLogout, pharmacieName,
+}: { tab: PharmacyTab; pendingCount: number; commandesCount: number; onTab: (t: PharmacyTab) => void; onLogout?: () => void; pharmacieName: string }) {
   const tabs = [
-    { key: "home" as const, icon: Home, label: "Accueil" },
-    { key: "requests" as const, icon: Inbox, label: "Demandes" },
-    { key: "inventory" as const, icon: Package, label: "Stock" },
-    { key: "profile" as const, icon: User, label: "Profil" },
+    { key: "home" as const, icon: Home, label: "Accueil", badge: 0 },
+    { key: "requests" as const, icon: Inbox, label: "Demandes", badge: pendingCount },
+    { key: "commandes" as const, icon: Package, label: "Commandes", badge: commandesCount },
+    { key: "inventory" as const, icon: BarChart3, label: "Stock", badge: 0 },
+    { key: "profile" as const, icon: User, label: "Profil", badge: 0 },
   ];
   return (
     <aside className="hidden lg:flex flex-col shrink-0 border-r border-gray-200 bg-white" style={{ width: 240 }}>
@@ -97,16 +99,16 @@ function PharmacySidebarNav({
         </div>
       </div>
       <nav className="flex-1 px-3 py-4 space-y-1">
-        {tabs.map(({ key, icon: Icon, label }) => {
+        {tabs.map(({ key, icon: Icon, label, badge }) => {
           const active = tab === key;
           return (
             <button key={key} onClick={() => onTab(key)} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors text-left"
               style={{ backgroundColor: active ? "#F0FDF4" : "transparent", color: active ? GREEN : "#4B5563" }}>
               <Icon className="w-5 h-5 shrink-0" />
               <span className="text-sm font-medium flex-1">{label}</span>
-              {key === "requests" && pendingCount > 0 && (
+              {badge > 0 && (
                 <span className="w-5 h-5 rounded-full flex items-center justify-center text-white font-bold shrink-0 bg-red-500" style={{ fontSize: "10px" }}>
-                  {pendingCount > 9 ? "9+" : pendingCount}
+                  {badge > 9 ? "9+" : badge}
                 </span>
               )}
             </button>
@@ -356,27 +358,34 @@ export function PharmacyDashboard({ onLogout }: Props) {
   const [tab, setTab] = useState<PharmacyTab>("home");
   const pharmacieId = session.getUserId();
 
-  const [pharmacie, setPharmacie]         = useState<PharmacieAPI | null>(null);
-  const [demandesEnAttente, setDemandes]  = useState<DemandeEnAttenteAPI[]>([]);
-  const [commandes, setCommandes]         = useState<CommandePharmacieAPI[]>([]);
-  const [medicaments, setMedicaments]     = useState<MedicamentAPI[]>([]);
+  const [pharmacie, setPharmacie]        = useState<PharmacieAPI | null>(null);
+  const [demandesEnAttente, setDemandes] = useState<DemandeEnAttenteAPI[]>([]);
+  const [commandes, setCommandes]        = useState<CommandePharmacieAPI[]>([]);
+  const [medicaments, setMedicaments]    = useState<MedicamentAPI[]>([]);
+  const [unreadCount, setUnreadCount]    = useState(0);
+
+  const reloadCommandes = () =>
+    commandesApi.getByPharmacieDetail(pharmacieId).then(setCommandes).catch(() => {});
 
   useEffect(() => {
     if (!pharmacieId) return;
     pharmaciesApi.getById(pharmacieId).then(setPharmacie).catch(() => {});
     demandesApi.getEnAttenteParPharmacie(pharmacieId).then(setDemandes).catch(() => {});
-    commandesApi.getByPharmacieDetail(pharmacieId).then(setCommandes).catch(() => {});
+    reloadCommandes();
     medicamentsApi.list().then(setMedicaments).catch(() => {});
+    notificationsApi.getNonLues(pharmacieId)
+      .then((n) => setUnreadCount(n.length))
+      .catch(() => {});
   }, [pharmacieId]);
 
   const handleMarquerPrete = async (id: string) => {
     await commandesApi.marquerPrete(id);
-    commandesApi.getByPharmacieDetail(pharmacieId).then(setCommandes).catch(() => {});
+    reloadCommandes();
   };
 
   const handleTerminer = async (id: string) => {
     await commandesApi.terminer(id);
-    commandesApi.getByPharmacieDetail(pharmacieId).then(setCommandes).catch(() => {});
+    reloadCommandes();
   };
 
   const handleAddMedicament = async (m: Omit<MedicamentAPI, "id">) => {
@@ -385,11 +394,12 @@ export function PharmacyDashboard({ onLogout }: Props) {
   };
 
   const pharmacieName = pharmacie?.nom ?? "Pharmacie";
+  const newCommandesCount = commandes.filter((c) => c.statut === "EN_PREPARATION").length;
 
   return (
     <div className="flex-1 flex overflow-hidden" style={{ backgroundColor: "#F3F4F6" }}>
       <PharmacySidebarNav
-        tab={tab} pendingCount={demandesEnAttente.length}
+        tab={tab} pendingCount={demandesEnAttente.length} commandesCount={newCommandesCount}
         onTab={setTab} onLogout={onLogout} pharmacieName={pharmacieName}
       />
 
@@ -409,11 +419,19 @@ export function PharmacyDashboard({ onLogout }: Props) {
                 </div>
               </div>
             </div>
-            {onLogout && (
-              <button onClick={onLogout} className="p-2 rounded-full hover:bg-gray-100">
-                <LogOut className="w-5 h-5 text-gray-600" />
+            <div className="flex items-center gap-1">
+              <button className="relative p-2 rounded-full hover:bg-gray-100">
+                <Bell className="w-5 h-5 text-gray-600" />
+                {unreadCount > 0 && (
+                  <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-red-500" />
+                )}
               </button>
-            )}
+              {onLogout && (
+                <button onClick={onLogout} className="p-2 rounded-full hover:bg-gray-100">
+                  <LogOut className="w-5 h-5 text-gray-600" />
+                </button>
+              )}
+            </div>
           </div>
         </header>
 
@@ -422,12 +440,21 @@ export function PharmacyDashboard({ onLogout }: Props) {
           <h1 className="font-bold text-gray-900 text-lg">
             {tab === "home" && "Tableau de bord"}
             {tab === "requests" && "Demandes patients"}
+            {tab === "commandes" && "Commandes"}
             {tab === "inventory" && "Catalogue médicaments"}
             {tab === "profile" && "Profil pharmacie"}
           </h1>
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full" style={{ backgroundColor: GREEN }} />
-            <span className="text-sm text-gray-500">{pharmacieName}</span>
+          <div className="flex items-center gap-3">
+            <button className="relative p-2 rounded-full hover:bg-gray-100">
+              <Bell className="w-5 h-5 text-gray-600" />
+              {unreadCount > 0 && (
+                <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-red-500" />
+              )}
+            </button>
+            <div className="flex items-center gap-1.5">
+              <div className="w-2 h-2 rounded-full" style={{ backgroundColor: GREEN }} />
+              <span className="text-sm text-gray-500">{pharmacieName}</span>
+            </div>
           </div>
         </header>
 
@@ -453,22 +480,21 @@ export function PharmacyDashboard({ onLogout }: Props) {
               />
             </div>
           )}
+          {tab === "commandes" && (
+            <CommandesTab commandes={commandes} onMarquerPrete={handleMarquerPrete} onTerminer={handleTerminer} />
+          )}
           {tab === "inventory" && (
             <div className="px-4 py-4">
-              <InventoryPanel
-                medicaments={medicaments}
-                onAdd={handleAddMedicament}
-              />
+              <InventoryPanel medicaments={medicaments} onAdd={handleAddMedicament} />
             </div>
           )}
           {tab === "profile" && <PharmacyProfileTab pharmacie={pharmacie} onLogout={onLogout} />}
-          {/* Commandes accessibles depuis l'accueil — onglet dédié si besoin */}
-          {tab === ("commandes" as PharmacyTab) && (
-            <CommandesTab commandes={commandes} onMarquerPrete={handleMarquerPrete} onTerminer={handleTerminer} />
-          )}
         </div>
 
-        <PharmacyNav tab={tab} pendingCount={demandesEnAttente.length} onTab={setTab} />
+        <PharmacyNav
+          tab={tab} pendingCount={demandesEnAttente.length} commandesCount={newCommandesCount}
+          onTab={setTab}
+        />
       </div>
     </div>
   );

@@ -147,7 +147,7 @@ export interface CommandeAPI {
   id: string;
   statut: "EN_PREPARATION" | "PRETE" | "EN_LIVRAISON" | "TERMINEE" | "ANNULEE";
   modeObtention: "LIVRAISON" | "RETRAIT";
-  modePaiement: "ESPECES" | "CARTE";
+  modePaiement: "A_LA_LIVRAISON" | "EN_LIGNE";
   createdAt: string;
 }
 
@@ -165,12 +165,16 @@ export interface CommandePharmacieAPI {
 
 export interface LivraisonAPI {
   id: string;
-  commandeId: string;
+  commandeId?: string;
   livreurId?: string;
   statut: "EN_ATTENTE_LIVREUR" | "ASSIGNEE" | "EN_COURS" | "LIVREE" | "ECHEC";
+  adresseLivraison?: string;
   livreurLatitude?: number;
   livreurLongitude?: number;
   assigneeAt?: string;
+  priseEnChargeAt?: string;
+  livreeAt?: string;
+  createdAt?: string;
 }
 
 export interface NotificationAPI {
@@ -218,6 +222,6 @@ export interface CreateCommandePayload {
   demandeId: string;
   pharmacieId: string;
   modeObtention: "LIVRAISON" | "RETRAIT";
-  modePaiement: "ESPECES" | "CARTE";
+  modePaiement: "A_LA_LIVRAISON" | "EN_LIGNE";
   medicamentIds: string[];
 }

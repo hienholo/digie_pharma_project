@@ -224,14 +224,29 @@ export const livraisonsApi = {
   getByCommande: (commandeId: string) =>
     http<LivraisonAPI>(`/livraisons/commande/${commandeId}`),
 
+  getByLivreur: (livreurId: string) =>
+    http<LivraisonAPI[]>(`/livraisons/livreur/${livreurId}`),
+
   getActiveByLivreur: (livreurId: string) =>
-    http<LivraisonAPI>(`/livraisons/livreur/${livreurId}/active`),
+    http<LivraisonAPI[]>(`/livraisons/livreur/${livreurId}/active`),
 
-  prendreEnCharge: (id: string) =>
-    http<LivraisonAPI>(`/livraisons/${id}/prendre-en-charge`, { method: "PATCH" }),
+  getEnAttente: () =>
+    http<LivraisonAPI[]>(`/livraisons/en-attente`),
 
-  confirmer: (id: string) =>
-    http<LivraisonAPI>(`/livraisons/${id}/confirmer`, { method: "PATCH" }),
+  assignerAuto: (id: string) =>
+    http<LivraisonAPI>(`/livraisons/${id}/assigner-auto`, { method: "PATCH" }),
+
+  prendreEnCharge: (id: string, livreurId: string) =>
+    http<LivraisonAPI>(`/livraisons/${id}/prendre-en-charge`, {
+      method: "PATCH",
+      body: JSON.stringify({ livreurId }),
+    }),
+
+  confirmer: (id: string, livreurId: string, note = "") =>
+    http<LivraisonAPI>(`/livraisons/${id}/confirmer`, {
+      method: "PATCH",
+      body: JSON.stringify({ livreurId, note }),
+    }),
 };
 
 // ── Médecins ──────────────────────────────────────────────────────────────────

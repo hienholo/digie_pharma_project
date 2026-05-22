@@ -1579,7 +1579,12 @@ function HomeTab({
 
 // ── Suivi (dashboard) tab ─────────────────────────────────────────────────────
 
-function SuiviTab({ orders, prescriptions, patientName }: { orders: OrderDisplay[]; prescriptions: PrescriptionDisplay[]; patientName: string }) {
+function SuiviTab({ orders, prescriptions, patientName, onOrderFromOrdonnance }: {
+  orders: OrderDisplay[];
+  prescriptions: PrescriptionDisplay[];
+  patientName: string;
+  onOrderFromOrdonnance?: (drugs: string[], ordonnanceId: string) => void;
+}) {
   return (
     <div className="px-4 pb-6 pt-4 space-y-5">
 
@@ -1708,9 +1713,18 @@ function SuiviTab({ orders, prescriptions, patientName }: { orders: OrderDisplay
                     {p.active ? "Active" : "En attente"}
                   </span>
                 </div>
-                {p.drugs.length > 0 && (
+                {onOrderFromOrdonnance && (
+                  <button
+                    onClick={() => onOrderFromOrdonnance(p.drugs ?? [], p.id)}
+                    className="mt-3 w-full py-2 rounded-xl text-white text-xs font-semibold"
+                    style={{ backgroundColor: "#2563EB" }}
+                  >
+                    Commander cette ordonnance
+                  </button>
+                )}
+                {(p.drugs?.length ?? 0) > 0 && (
                   <div className="mt-3 flex flex-wrap gap-1.5">
-                    {p.drugs.map((d) => (
+                    {p.drugs!.map((d) => (
                       <span key={d} className="text-[11px] px-2.5 py-1 rounded-lg bg-gray-50 text-gray-600 font-medium border border-gray-100">
                         {d}
                       </span>
@@ -1928,6 +1942,7 @@ export function PatientSpace({ onLogout, userId }: Props) {
   const [pharmaciesApi_, setPharmaciesApi] = useState<PharmacieAPI[]>([]);
   const [commande, setCommande] = useState<CommandeAPI | null>(null);
   const [demandeId, setDemandeId] = useState<string | null>(null);
+  const [commandePharmacyMap, setCommandePharmacyMap] = useState<Record<string, string>>({});
   const [apiDemandes, setApiDemandes] = useState<DemandeAPI[]>([]);
   const [apiOrdonnances, setApiOrdonnances] = useState<OrdonnanceAPI[]>([]);
   const [patientName, setPatientName] = useState("");
@@ -1986,36 +2001,20 @@ export function PatientSpace({ onLogout, userId }: Props) {
     ordonnancesApi.getByPatient(userId).then(setApiOrdonnances).catch(() => {});
   }, [userId]);
 
-  // ── Chargement des pharmacies (+ seed si DB vide) ───────────────────────
+  // ── Chargement des pharmacies inscrites (géoloc → nearby, sinon toutes) ─
   useEffect(() => {
-    const loadPharmacies = async (list: PharmacieAPI[]) => {
-      if (list.length === 0) {
-        // Seed automatique avec les pharmacies de test
-        const seeds = [
-          { nom: "Pharmacie du Plateau",        adresse: "23 Boulevard de la République, Plateau, Abidjan",   latitude: 5.3196,  longitude: -4.0167, livraisonActive: true  },
-          { nom: "Pharmacie de l'Espérance",    adresse: "Cité Sicogi, Bloc B, Yopougon, Abidjan",            latitude: 5.3333,  longitude: -4.0833, livraisonActive: true  },
-          { nom: "Pharmacie Centrale d'Abidjan",adresse: "Avenue Chardy, Plateau, Abidjan",                   latitude: 5.3220,  longitude: -4.0120, livraisonActive: false },
-          { nom: "Pharmacie Sainte Marie",       adresse: "Boulevard Latrille, Cocody, Abidjan",               latitude: 5.3553,  longitude: -3.9988, livraisonActive: true  },
-        ];
-        await Promise.allSettled(seeds.map((s) => pharmaciesApi.create(s)));
-        return await pharmaciesApi.list();
-      }
-      return list;
-    };
+    const loadAll = () => pharmaciesApi.list().then(setPharmaciesApi).catch(() => {});
 
-    navigator.geolocation?.getCurrentPosition(
+    if (!navigator.geolocation) { loadAll(); return; }
+
+    navigator.geolocation.getCurrentPosition(
       async ({ coords }) => {
         try {
           const data = await pharmaciesApi.nearby(coords.latitude, coords.longitude);
-          setPharmaciesApi(await loadPharmacies(data));
-        } catch { /* fallback sur les mocks */ }
+          setPharmaciesApi(data.length > 0 ? data : await pharmaciesApi.list());
+        } catch { loadAll(); }
       },
-      async () => {
-        try {
-          const data = await pharmaciesApi.list();
-          setPharmaciesApi(await loadPharmacies(data));
-        } catch { /* fallback sur les mocks */ }
-      }
+      () => loadAll()
     );
   }, []);
 
@@ -2043,7 +2042,7 @@ export function PatientSpace({ onLogout, userId }: Props) {
   };
   const apiOrderDisplays: OrderDisplay[] = apiDemandes.map((d) => ({
     id: d.id,
-    pharmacy: "Pharmacie partenaire",
+    pharmacy: commandePharmacyMap[d.id] ?? "—",
     items: d.ordonnanceId ? ["Ordonnance"] : ["Médicament"],
     status: demandeStatutLabel[d.statut] ?? d.statut,
     statusColor: demandeStatutColor[d.statut] ?? "#6B7280",
@@ -2058,7 +2057,7 @@ export function PatientSpace({ onLogout, userId }: Props) {
     date: new Date(o.createdAt).toLocaleDateString("fr-FR"),
     expires: "–",
     active: o.statut !== "EN_ATTENTE_OCR",
-    drugs: o.medicaments,
+    drugs: o.medicaments ?? [],
   }));
 
   // Whether we're in the middle of the checkout flow (not home search, not tracking)
@@ -2067,9 +2066,16 @@ export function PatientSpace({ onLogout, userId }: Props) {
     step !== "search" &&
     step !== "tracking";
 
-  const handleSearch = (q: string) => {
+  const handleSearch = async (q: string) => {
     setQuery(q);
     setItems(q ? [q] : []);
+    setDemandeId(null);
+    if (userId && q) {
+      try {
+        const d = await demandesApi.create({ patientId: userId, type: "MEDICAMENT" });
+        setDemandeId(d.id);
+      } catch {}
+    }
     setStep("pharmacies");
   };
 
@@ -2082,7 +2088,7 @@ export function PatientSpace({ onLogout, userId }: Props) {
       try {
         const d = await demandesApi.create({
           patientId: userId,
-          type: "LIVRAISON",
+          type: "ORDONNANCE",
           ordonnanceId,
         });
         setDemandeId(d.id);
@@ -2111,14 +2117,26 @@ export function PatientSpace({ onLogout, userId }: Props) {
     setStep("tracking");
     if (userId && selectedPharmacy) {
       try {
+        let dId = demandeId;
+        if (!dId) {
+          const d = await demandesApi.create({
+            patientId: userId,
+            type: "MEDICAMENT",
+          });
+          dId = d.id;
+          setDemandeId(dId);
+        }
         const c = await commandesApi.create({
-          demandeId: demandeId ?? "",
+          demandeId: dId,
           pharmacieId: selectedPharmacy.id,
           modeObtention: mode === "delivery" ? "LIVRAISON" : "RETRAIT",
-          modePaiement: method === "card" ? "CARTE" : "ESPECES",
+          modePaiement: method === "card" ? "EN_LIGNE" : "A_LA_LIVRAISON",
           medicamentIds: [],
         });
         setCommande(c);
+        const pharmacyName = selectedPharmacy.name;
+        setCommandePharmacyMap((prev) => ({ ...prev, [dId!]: pharmacyName }));
+        demandesApi.getByPatient(userId).then(setApiDemandes).catch(() => {});
       } catch { /* on continue le tracking mock en cas d'erreur */ }
     }
     setTimeout(() => setOrderStep("preparing"), 1200);
@@ -2317,6 +2335,19 @@ export function PatientSpace({ onLogout, userId }: Props) {
           orders={apiOrderDisplays}
           prescriptions={apiPresDisplays}
           patientName={patientName}
+          onOrderFromOrdonnance={async (drugs, ordonnanceId) => {
+            setItems(drugs);
+            setQuery(drugs[0] ?? "ordonnance");
+            setDemandeId(null);
+            if (userId) {
+              try {
+                const d = await demandesApi.create({ patientId: userId, type: "ORDONNANCE", ordonnanceId });
+                setDemandeId(d.id);
+              } catch {}
+            }
+            setTab("search");
+            setStep("pharmacies");
+          }}
         />
       )}
 
