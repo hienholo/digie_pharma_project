@@ -20,7 +20,7 @@ type Props = {
 
 const availLabels = {
   "in-stock": { text: "Disponible", color: "#10B981" },
-  partial: { text: "Partiellement dispo.", color: "#F59E0B" },
+  partial: { text: "Partiellement dispo.", color: "#F47920" },
   unknown: { text: "À confirmer", color: "#6B7280" },
 };
 
@@ -77,7 +77,7 @@ export function PharmacyCard({ pharmacy, onOrder }: Props) {
           <button
             onClick={() => onOrder(pharmacy, "delivery")}
             className="flex items-center justify-center gap-2 py-2.5 rounded-xl text-white"
-            style={{ backgroundColor: "#3B82F6" }}
+            style={{ backgroundColor: "#1A3072" }}
           >
             <Truck className="w-4 h-4" />
             Livraison

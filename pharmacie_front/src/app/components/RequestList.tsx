@@ -34,11 +34,11 @@ export function RequestList({ requests, pharmacieId, onRepondu }: Props) {
             <div
               key={req.reponseId}
               onClick={() => setSelected(req)}
-              className="bg-white rounded-2xl p-4 border border-gray-200 cursor-pointer hover:border-green-200 transition-colors"
+              className="bg-white rounded-2xl p-4 border border-gray-200 cursor-pointer hover:border-[#D6DCF0] transition-colors"
             >
               <div className="flex items-start justify-between mb-3">
                 <div className="flex items-center gap-2">
-                  <div className="w-9 h-9 rounded-full flex items-center justify-center text-white text-sm bg-blue-500">
+                  <div className="w-9 h-9 rounded-full flex items-center justify-center text-white text-sm bg-[#1A3072]">
                     {req.patientPrenom.charAt(0)}
                   </div>
                   <div>
@@ -70,7 +70,7 @@ export function RequestList({ requests, pharmacieId, onRepondu }: Props) {
 
               <button
                 onClick={(e) => { e.stopPropagation(); setSelected(req); }}
-                className="w-full py-2 rounded-xl text-white text-sm bg-blue-500 hover:bg-blue-600 transition"
+                className="w-full py-2 rounded-xl text-white text-sm bg-[#1A3072] hover:bg-[#122660] transition"
               >
                 Répondre à la demande
               </button>

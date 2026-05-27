@@ -20,9 +20,9 @@ const SPECIALITE_LABELS: Record<string, string> = {
 };
 
 const STATUT_COLORS: Record<string, { bg: string; text: string }> = {
-  EN_ATTENTE: { bg: "#FEF3C7", text: "#D97706" },
+  EN_ATTENTE: { bg: "#FEF3C7", text: "#D4680F" },
   CONFIRME:   { bg: "#DCFCE7", text: "#16A34A" },
-  COMPLETE:   { bg: "#DBEAFE", text: "#0284C7" },
+  COMPLETE:   { bg: "#D6DCF0", text: "#0284C7" },
   ANNULE:     { bg: "#FEE2E2", text: "#DC2626" },
 };
 const STATUT_LABELS: Record<string, string> = {
@@ -136,7 +136,7 @@ export function PatientDoctorAppointments({ patientId }: Props) {
             <Calendar className="w-12 h-12 text-gray-300 mb-3" />
             <p className="text-gray-500">Aucun rendez-vous</p>
             <button onClick={() => setActiveTab("book")}
-              className="mt-3 text-sm text-blue-600 hover:underline font-medium">
+              className="mt-3 text-sm text-[#1A3072] hover:underline font-medium">
               Prendre un rendez-vous
             </button>
           </div>
@@ -147,7 +147,7 @@ export function PatientDoctorAppointments({ patientId }: Props) {
               return (
                 <div key={r.id} className="px-4 py-4">
                   <div className="flex items-start gap-3">
-                    <div className="w-10 h-10 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center font-bold shrink-0">
+                    <div className="w-10 h-10 bg-[#EEF1F8] text-[#1A3072] rounded-full flex items-center justify-center font-bold shrink-0">
                       {r.medecinPrenom.charAt(0)}
                     </div>
                     <div className="flex-1 min-w-0">
@@ -191,9 +191,9 @@ export function PatientDoctorAppointments({ patientId }: Props) {
   if (selectedDoctor && selectedDate) {
     return (
       <div className="flex-1 flex flex-col overflow-y-auto">
-        <div className="bg-gradient-to-r from-blue-50 to-blue-100 p-5 border-b border-blue-200">
+        <div className="bg-gradient-to-r from-[#EEF1F8] to-[#D6DCF0] p-5 border-b border-[#D6DCF0]">
           <button onClick={() => { setSelectedDate(""); setSelectedTime(""); setSubmitError(null); }}
-            className="mb-3 text-blue-600 hover:underline font-medium flex items-center gap-1 text-sm">
+            className="mb-3 text-[#1A3072] hover:underline font-medium flex items-center gap-1 text-sm">
             ← Retour au calendrier
           </button>
           <p className="font-semibold text-gray-900">Dr. {selectedDoctor.prenom} {selectedDoctor.nom}</p>
@@ -208,8 +208,8 @@ export function PatientDoctorAppointments({ patientId }: Props) {
                 <button key={s.time} onClick={() => setSelectedTime(s.time)}
                   className={`py-3 rounded-xl font-medium text-sm transition border ${
                     selectedTime === s.time
-                      ? "bg-blue-600 text-white border-blue-600"
-                      : "border-gray-300 text-gray-700 hover:border-blue-400 hover:bg-blue-50"
+                      ? "bg-[#1A3072] text-white border-[#1A3072]"
+                      : "border-gray-300 text-gray-700 hover:border-[#1A3072] hover:bg-[#EEF1F8]"
                   }`}>
                   {s.time}
                 </button>
@@ -221,11 +221,11 @@ export function PatientDoctorAppointments({ patientId }: Props) {
             <label className="text-sm font-medium text-gray-700 block mb-2">Motif (facultatif)</label>
             <textarea value={motif} onChange={(e) => setMotif(e.target.value)}
               placeholder="Ex : Consultation, renouvellement ordonnance…"
-              rows={2} className="w-full px-4 py-3 rounded-xl border border-gray-300 text-sm focus:outline-none focus:border-blue-500 resize-none" />
+              rows={2} className="w-full px-4 py-3 rounded-xl border border-gray-300 text-sm focus:outline-none focus:border-[#1A3072] resize-none" />
           </div>
 
           {selectedTime && (
-            <div className="p-3 bg-blue-50 rounded-xl border border-blue-200 text-sm">
+            <div className="p-3 bg-[#EEF1F8] rounded-xl border border-[#D6DCF0] text-sm">
               <p className="font-medium text-gray-900">Dr. {selectedDoctor.prenom} {selectedDoctor.nom}</p>
               <p className="text-gray-600">{formatDate(selectedDate)} à {selectedTime}</p>
             </div>
@@ -243,7 +243,7 @@ export function PatientDoctorAppointments({ patientId }: Props) {
               Annuler
             </button>
             <button onClick={handleConfirm} disabled={!selectedTime || submitting}
-              className="py-3 bg-blue-600 text-white font-medium rounded-xl hover:bg-blue-700 disabled:opacity-50 transition text-sm">
+              className="py-3 bg-[#1A3072] text-white font-medium rounded-xl hover:bg-[#122660] disabled:opacity-50 transition text-sm">
               {submitting ? "Envoi…" : "Confirmer"}
             </button>
           </div>
@@ -258,13 +258,13 @@ export function PatientDoctorAppointments({ patientId }: Props) {
   if (selectedDoctor) {
     return (
       <div className="flex-1 flex flex-col overflow-y-auto">
-        <div className="bg-gradient-to-r from-blue-50 to-blue-100 p-5 border-b border-blue-200">
+        <div className="bg-gradient-to-r from-[#EEF1F8] to-[#D6DCF0] p-5 border-b border-[#D6DCF0]">
           <button onClick={() => setSelectedDoctor(null)}
-            className="mb-3 text-blue-600 hover:underline font-medium text-sm">
+            className="mb-3 text-[#1A3072] hover:underline font-medium text-sm">
             ← Retour aux médecins
           </button>
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-blue-600 text-white rounded-full flex items-center justify-center text-xl font-bold">
+            <div className="w-12 h-12 bg-[#1A3072] text-white rounded-full flex items-center justify-center text-xl font-bold">
               {selectedDoctor.prenom.charAt(0)}
             </div>
             <div>
@@ -308,10 +308,10 @@ export function PatientDoctorAppointments({ patientId }: Props) {
                 return (
                   <button key={day} onClick={() => !disabled && setSelectedDate(iso)} disabled={disabled}
                     className={`aspect-square rounded-lg text-xs font-medium transition flex items-center justify-center ${
-                      isSelected ? "bg-blue-600 text-white"
-                        : isToday ? "bg-blue-100 text-blue-700 border border-blue-300"
+                      isSelected ? "bg-[#1A3072] text-white"
+                        : isToday ? "bg-[#EEF1F8] text-[#1A3072] border border-[#D6DCF0]"
                         : disabled ? "text-gray-300 cursor-not-allowed"
-                        : "text-gray-700 hover:bg-blue-50 border border-transparent hover:border-blue-200"
+                        : "text-gray-700 hover:bg-[#EEF1F8] border border-transparent hover:border-[#D6DCF0]"
                     }`}>
                     {day}
                   </button>
@@ -333,18 +333,18 @@ export function PatientDoctorAppointments({ patientId }: Props) {
       <div className="bg-white border-b border-gray-200 flex">
         <button onClick={() => setActiveTab("list")}
           className={`flex-1 py-3.5 text-sm font-semibold transition border-b-2 ${
-            activeTab === "list" ? "border-blue-600 text-blue-600" : "border-transparent text-gray-500 hover:text-gray-700"
+            activeTab === "list" ? "border-[#1A3072] text-[#1A3072]" : "border-transparent text-gray-500 hover:text-gray-700"
           }`}>
           Mes RDV
           {mesRdvs.filter((r) => r.statut === "EN_ATTENTE" || r.statut === "CONFIRME").length > 0 && (
-            <span className="ml-1.5 bg-blue-600 text-white text-xs px-1.5 py-0.5 rounded-full">
+            <span className="ml-1.5 bg-[#1A3072] text-white text-xs px-1.5 py-0.5 rounded-full">
               {mesRdvs.filter((r) => r.statut === "EN_ATTENTE" || r.statut === "CONFIRME").length}
             </span>
           )}
         </button>
         <button onClick={() => setActiveTab("book")}
           className={`flex-1 py-3.5 text-sm font-semibold transition border-b-2 ${
-            activeTab === "book" ? "border-blue-600 text-blue-600" : "border-transparent text-gray-500 hover:text-gray-700"
+            activeTab === "book" ? "border-[#1A3072] text-[#1A3072]" : "border-transparent text-gray-500 hover:text-gray-700"
           }`}>
           Prendre RDV
         </button>
@@ -372,9 +372,9 @@ export function PatientDoctorAppointments({ patientId }: Props) {
               <div className="divide-y divide-gray-100">
                 {filteredDoctors.map((d) => (
                   <button key={d.id} onClick={() => setSelectedDoctor(d)}
-                    className="w-full px-4 py-4 hover:bg-gray-50 transition text-left border-l-4 border-transparent hover:border-blue-600">
+                    className="w-full px-4 py-4 hover:bg-gray-50 transition text-left border-l-4 border-transparent hover:border-[#1A3072]">
                     <div className="flex items-start gap-3">
-                      <div className="w-11 h-11 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center font-bold shrink-0">
+                      <div className="w-11 h-11 bg-[#EEF1F8] text-[#1A3072] rounded-full flex items-center justify-center font-bold shrink-0">
                         {d.prenom.charAt(0)}
                       </div>
                       <div className="flex-1 min-w-0">

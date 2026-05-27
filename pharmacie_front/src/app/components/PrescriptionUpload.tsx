@@ -65,9 +65,9 @@ export function PrescriptionUpload({ open, onClose, onConfirm }: Props) {
               />
               <div
                 className="mx-auto w-12 h-12 rounded-full flex items-center justify-center mb-3"
-                style={{ backgroundColor: "#EFF6FF" }}
+                style={{ backgroundColor: "#EEF1F8" }}
               >
-                <Camera className="w-6 h-6" style={{ color: "#2563EB" }} />
+                <Camera className="w-6 h-6" style={{ color: "#1A3072" }} />
               </div>
               <p className="text-gray-700">Prenez une photo ou importez</p>
               <p className="text-sm text-gray-500 mt-1">
@@ -75,7 +75,7 @@ export function PrescriptionUpload({ open, onClose, onConfirm }: Props) {
               </p>
               <div
                 className="inline-flex items-center gap-2 mt-4 px-4 py-2 rounded-xl text-white text-sm"
-                style={{ backgroundColor: "#3B82F6" }}
+                style={{ backgroundColor: "#1A3072" }}
               >
                 <Upload className="w-4 h-4" />
                 Sélectionner un fichier
@@ -107,7 +107,7 @@ export function PrescriptionUpload({ open, onClose, onConfirm }: Props) {
                     <button
                       onClick={() => setEditing(!editing)}
                       className="flex items-center gap-1 text-sm"
-                      style={{ color: "#2563EB" }}
+                      style={{ color: "#1A3072" }}
                     >
                       <Edit3 className="w-4 h-4" />
                       {editing ? "Terminer" : "Corriger"}
@@ -142,7 +142,7 @@ export function PrescriptionUpload({ open, onClose, onConfirm }: Props) {
                 onClick={() => onConfirm(items)}
                 disabled={scanning || items.length === 0}
                 className="w-full py-3 rounded-xl text-white disabled:opacity-50"
-                style={{ backgroundColor: "#2563EB" }}
+                style={{ backgroundColor: "#1A3072" }}
               >
                 Chercher dans les pharmacies
               </button>

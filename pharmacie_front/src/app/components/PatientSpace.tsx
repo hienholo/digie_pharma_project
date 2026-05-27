@@ -113,7 +113,7 @@ function StepBar({ current }: { current: PatientStep }) {
                       backgroundColor: done
                         ? "#10B981"
                         : active
-                          ? "#2563EB"
+                          ? "#1A3072"
                           : "#E5E7EB",
                       color: done || active ? "white" : "#9CA3AF",
                     }}
@@ -123,7 +123,7 @@ function StepBar({ current }: { current: PatientStep }) {
                   <span
                     className="text-xs hidden sm:block"
                     style={{
-                      color: active ? "#2563EB" : done ? "#10B981" : "#9CA3AF",
+                      color: active ? "#1A3072" : done ? "#10B981" : "#9CA3AF",
                       fontWeight: active ? 600 : 400,
                     }}
                   >
@@ -171,7 +171,7 @@ function SearchModule({
       {/* ── Hero search ── */}
       <div
         className="px-5 pt-6 pb-8 relative overflow-hidden"
-        style={{ background: "linear-gradient(145deg, #1D4ED8 0%, #2563EB 60%, #3B82F6 100%)" }}
+        style={{ background: "linear-gradient(145deg, #122660 0%, #1A3072 60%, #1A3072 100%)" }}
       >
         {/* Decorative circles */}
         <div className="absolute -right-8 -top-8 w-36 h-36 rounded-full bg-white/10" />
@@ -256,7 +256,7 @@ function SearchModule({
               {/* Avatar */}
               <div
                 className="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 text-white font-bold text-base"
-                style={{ backgroundColor: p.open ? "#2563EB" : "#9CA3AF" }}
+                style={{ backgroundColor: p.open ? "#1A3072" : "#9CA3AF" }}
               >
                 {p.name.charAt(0)}
               </div>
@@ -311,7 +311,7 @@ function SearchModule({
         <button
           onClick={onPrescription}
           className="w-full flex items-center gap-4 rounded-2xl p-4 text-left border-2 border-dashed border-blue-200 hover:border-blue-400 hover:bg-blue-50/40 transition"
-          style={{ backgroundColor: "#EFF6FF" }}
+          style={{ backgroundColor: "#EEF1F8" }}
         >
           <div className="w-11 h-11 rounded-2xl bg-blue-100 flex items-center justify-center shrink-0">
             <Camera className="w-5 h-5 text-blue-600" />
@@ -390,9 +390,9 @@ function PrescriptionModal({
               />
               <div
                 className="mx-auto w-14 h-14 rounded-full flex items-center justify-center mb-3"
-                style={{ backgroundColor: "#EFF6FF" }}
+                style={{ backgroundColor: "#EEF1F8" }}
               >
-                <Camera className="w-7 h-7" style={{ color: "#2563EB" }} />
+                <Camera className="w-7 h-7" style={{ color: "#1A3072" }} />
               </div>
               <p className="text-gray-700 font-medium">Prenez une photo ou importez</p>
               <p className="text-sm text-gray-400 mt-1">PNG / JPG · Analyse OCR automatique</p>
@@ -453,7 +453,7 @@ function PrescriptionModal({
                   <button
                     onClick={() => onConfirm(items)}
                     className="mt-4 w-full py-3 rounded-xl text-white text-sm font-medium"
-                    style={{ backgroundColor: "#2563EB" }}
+                    style={{ backgroundColor: "#1A3072" }}
                   >
                     Rechercher ces médicaments
                   </button>
@@ -478,8 +478,8 @@ const availConfig = {
   },
   partial: {
     label: "Partiel",
-    color: "#F59E0B",
-    bg: "#FFFBEB",
+    color: "#F47920",
+    bg: "#FFF3E6",
     icon: Info,
   },
   unknown: {
@@ -559,7 +559,7 @@ function PharmaciesModule({
             onClick={() => setFilter(f)}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold shrink-0 transition"
             style={{
-              backgroundColor: filter === f ? "#2563EB" : "#F3F4F6",
+              backgroundColor: filter === f ? "#1A3072" : "#F3F4F6",
               color: filter === f ? "white" : "#374151",
             }}
           >
@@ -642,7 +642,7 @@ function PharmaciesModule({
                 onClick={() => onSelect(p)}
                 className="mt-3 w-full py-2.5 rounded-xl text-sm font-medium transition disabled:opacity-50 disabled:cursor-not-allowed"
                 style={{
-                  backgroundColor: p.open ? "#2563EB" : "#E5E7EB",
+                  backgroundColor: p.open ? "#1A3072" : "#E5E7EB",
                   color: p.open ? "white" : "#9CA3AF",
                 }}
               >
@@ -687,19 +687,19 @@ function ModeModule({
             onClick={() => setSelected("pickup")}
             className="w-full flex items-start gap-4 p-5 rounded-2xl border-2 text-left transition"
             style={{
-              borderColor: selected === "pickup" ? "#2563EB" : "#E5E7EB",
-              backgroundColor: selected === "pickup" ? "#EFF6FF" : "white",
+              borderColor: selected === "pickup" ? "#1A3072" : "#E5E7EB",
+              backgroundColor: selected === "pickup" ? "#EEF1F8" : "white",
             }}
           >
             <div
               className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0"
               style={{
-                backgroundColor: selected === "pickup" ? "#DBEAFE" : "#F3F4F6",
+                backgroundColor: selected === "pickup" ? "#D6DCF0" : "#F3F4F6",
               }}
             >
               <Package
                 className="w-6 h-6"
-                style={{ color: selected === "pickup" ? "#2563EB" : "#6B7280" }}
+                style={{ color: selected === "pickup" ? "#1A3072" : "#6B7280" }}
               />
             </div>
             <div className="flex-1">
@@ -724,19 +724,19 @@ function ModeModule({
             onClick={() => setSelected("delivery")}
             className="w-full flex items-start gap-4 p-5 rounded-2xl border-2 text-left transition"
             style={{
-              borderColor: selected === "delivery" ? "#2563EB" : "#E5E7EB",
-              backgroundColor: selected === "delivery" ? "#EFF6FF" : "white",
+              borderColor: selected === "delivery" ? "#1A3072" : "#E5E7EB",
+              backgroundColor: selected === "delivery" ? "#EEF1F8" : "white",
             }}
           >
             <div
               className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0"
               style={{
-                backgroundColor: selected === "delivery" ? "#DBEAFE" : "#F3F4F6",
+                backgroundColor: selected === "delivery" ? "#D6DCF0" : "#F3F4F6",
               }}
             >
               <Truck
                 className="w-6 h-6"
-                style={{ color: selected === "delivery" ? "#2563EB" : "#6B7280" }}
+                style={{ color: selected === "delivery" ? "#1A3072" : "#6B7280" }}
               />
             </div>
             <div className="flex-1">
@@ -760,7 +760,7 @@ function ModeModule({
         disabled={!selected}
         onClick={() => selected && onSelect(selected)}
         className="w-full py-3 rounded-xl text-white font-medium transition disabled:opacity-50 disabled:cursor-not-allowed"
-        style={{ backgroundColor: "#2563EB" }}
+        style={{ backgroundColor: "#1A3072" }}
       >
         Continuer →
       </button>
@@ -806,7 +806,7 @@ function ValidationModule({
         <div className="flex items-center gap-3">
           <div
             className="w-10 h-10 rounded-xl flex items-center justify-center"
-            style={{ backgroundColor: "#EFF6FF" }}
+            style={{ backgroundColor: "#EEF1F8" }}
           >
             <MapPin className="w-5 h-5 text-blue-600" />
           </div>
@@ -818,8 +818,8 @@ function ValidationModule({
         <div
           className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium"
           style={{
-            backgroundColor: mode === "delivery" ? "#EFF6FF" : "#F0FDF4",
-            color: mode === "delivery" ? "#2563EB" : "#059669",
+            backgroundColor: mode === "delivery" ? "#EEF1F8" : "#F0FDF4",
+            color: mode === "delivery" ? "#1A3072" : "#059669",
           }}
         >
           {mode === "delivery" ? (
@@ -874,7 +874,7 @@ function ValidationModule({
         </div>
         <div className="flex justify-between font-semibold text-gray-900 pt-2 border-t border-gray-100">
           <span>Total</span>
-          <span style={{ color: "#2563EB" }}>{total} DA</span>
+          <span style={{ color: "#1A3072" }}>{total} DA</span>
         </div>
       </div>
 
@@ -882,7 +882,7 @@ function ValidationModule({
         disabled={mode === "delivery" && !address.trim()}
         onClick={() => onConfirm(address)}
         className="w-full py-3 rounded-xl text-white font-medium transition disabled:opacity-50 disabled:cursor-not-allowed"
-        style={{ backgroundColor: "#2563EB" }}
+        style={{ backgroundColor: "#1A3072" }}
       >
         Valider la commande →
       </button>
@@ -926,17 +926,17 @@ function PaymentModule({
           onClick={() => setPayMethod("cash")}
           className="w-full flex items-start gap-4 p-5 rounded-2xl border-2 text-left transition"
           style={{
-            borderColor: payMethod === "cash" ? "#2563EB" : "#E5E7EB",
-            backgroundColor: payMethod === "cash" ? "#EFF6FF" : "white",
+            borderColor: payMethod === "cash" ? "#1A3072" : "#E5E7EB",
+            backgroundColor: payMethod === "cash" ? "#EEF1F8" : "white",
           }}
         >
           <div
             className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0"
-            style={{ backgroundColor: payMethod === "cash" ? "#DBEAFE" : "#F3F4F6" }}
+            style={{ backgroundColor: payMethod === "cash" ? "#D6DCF0" : "#F3F4F6" }}
           >
             <Banknote
               className="w-6 h-6"
-              style={{ color: payMethod === "cash" ? "#2563EB" : "#6B7280" }}
+              style={{ color: payMethod === "cash" ? "#1A3072" : "#6B7280" }}
             />
           </div>
           <div className="flex-1">
@@ -957,17 +957,17 @@ function PaymentModule({
           onClick={() => setPayMethod("card")}
           className="w-full flex items-start gap-4 p-5 rounded-2xl border-2 text-left transition"
           style={{
-            borderColor: payMethod === "card" ? "#2563EB" : "#E5E7EB",
-            backgroundColor: payMethod === "card" ? "#EFF6FF" : "white",
+            borderColor: payMethod === "card" ? "#1A3072" : "#E5E7EB",
+            backgroundColor: payMethod === "card" ? "#EEF1F8" : "white",
           }}
         >
           <div
             className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0"
-            style={{ backgroundColor: payMethod === "card" ? "#DBEAFE" : "#F3F4F6" }}
+            style={{ backgroundColor: payMethod === "card" ? "#D6DCF0" : "#F3F4F6" }}
           >
             <CreditCard
               className="w-6 h-6"
-              style={{ color: payMethod === "card" ? "#2563EB" : "#6B7280" }}
+              style={{ color: payMethod === "card" ? "#1A3072" : "#6B7280" }}
             />
           </div>
           <div className="flex-1">
@@ -1015,13 +1015,13 @@ function PaymentModule({
       {/* Order total */}
       <div className="bg-gray-50 rounded-2xl p-4 flex justify-between font-semibold text-gray-900">
         <span>Total à payer</span>
-        <span style={{ color: "#2563EB" }}>{total} DA</span>
+        <span style={{ color: "#1A3072" }}>{total} DA</span>
       </div>
 
       <button
         onClick={onPay}
         className="w-full py-3 rounded-xl text-white font-medium"
-        style={{ backgroundColor: "#2563EB" }}
+        style={{ backgroundColor: "#1A3072" }}
       >
         {payMethod === "cash"
           ? mode === "delivery"
@@ -1117,7 +1117,7 @@ function TrackingModule({
       <button
         onClick={onNewOrder}
         className="w-full py-3 rounded-xl text-white font-medium"
-        style={{ backgroundColor: "#2563EB" }}
+        style={{ backgroundColor: "#1A3072" }}
       >
         Nouvelle recherche
       </button>
@@ -1128,10 +1128,10 @@ function TrackingModule({
 // ── Notifications page ────────────────────────────────────────────────────────
 
 const notifIconConfig = {
-  order: { bg: "#EFF6FF", color: "#2563EB", Icon: ClipboardList },
+  order: { bg: "#EEF1F8", color: "#1A3072", Icon: ClipboardList },
   pharmacy: { bg: "#F0FDF4", color: "#059669", Icon: MapPin },
-  promo: { bg: "#FFFBEB", color: "#D97706", Icon: Pill },
-  system: { bg: "#F5F3FF", color: "#7C3AED", Icon: Bell },
+  promo: { bg: "#FFF3E6", color: "#D4680F", Icon: Pill },
+  system: { bg: "#FFF3E6", color: "#D4680F", Icon: Bell },
 };
 
 function NotificationsPage({
@@ -1177,8 +1177,8 @@ function NotificationsPage({
                 key={n.id}
                 className="bg-white rounded-2xl border p-4 flex items-start gap-3 transition"
                 style={{
-                  borderColor: n.read ? "#F3F4F6" : "#BFDBFE",
-                  backgroundColor: n.read ? "white" : "#F0F7FF",
+                  borderColor: n.read ? "#F3F4F6" : "#B8C5E5",
+                  backgroundColor: n.read ? "white" : "#EEF1F8",
                 }}
               >
                 <div
@@ -1198,7 +1198,7 @@ function NotificationsPage({
                     {!n.read && (
                       <span
                         className="w-2 h-2 rounded-full shrink-0 mt-1.5"
-                        style={{ backgroundColor: "#2563EB" }}
+                        style={{ backgroundColor: "#1A3072" }}
                       />
                     )}
                   </div>
@@ -1242,7 +1242,7 @@ function ProfilePage({ onLogout, userId, orders }: { onLogout: () => void; userI
           <div
             className="w-16 h-16 rounded-2xl flex items-center justify-center text-white text-2xl font-bold shrink-0"
             style={{
-              background: "linear-gradient(135deg, #3B82F6 0%, #2563EB 100%)",
+              background: "linear-gradient(135deg, #1A3072 0%, #1A3072 100%)",
             }}
           >
             {name.charAt(0)}
@@ -1310,7 +1310,7 @@ function ProfilePage({ onLogout, userId, orders }: { onLogout: () => void; userI
             <button
               onClick={() => setEditing(false)}
               className="w-full py-2 rounded-xl text-white text-sm"
-              style={{ backgroundColor: "#2563EB" }}
+              style={{ backgroundColor: "#1A3072" }}
             >
               Enregistrer
             </button>
@@ -1336,7 +1336,7 @@ function ProfilePage({ onLogout, userId, orders }: { onLogout: () => void; userI
               <div key={o.id} className="px-4 py-3 flex items-start gap-3">
                 <div
                   className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
-                  style={{ backgroundColor: "#EFF6FF" }}
+                  style={{ backgroundColor: "#EEF1F8" }}
                 >
                   <ClipboardList className="w-4 h-4 text-blue-600" />
                 </div>
@@ -1384,7 +1384,7 @@ function ProfilePage({ onLogout, userId, orders }: { onLogout: () => void; userI
             <button
               onClick={() => setNotifEnabled(!notifEnabled)}
               className="relative w-10 h-6 rounded-full transition-colors"
-              style={{ backgroundColor: notifEnabled ? "#2563EB" : "#D1D5DB" }}
+              style={{ backgroundColor: notifEnabled ? "#1A3072" : "#D1D5DB" }}
             >
               <span
                 className="absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-all"
@@ -1400,7 +1400,7 @@ function ProfilePage({ onLogout, userId, orders }: { onLogout: () => void; userI
             <button
               onClick={() => setLocationEnabled(!locationEnabled)}
               className="relative w-10 h-6 rounded-full transition-colors"
-              style={{ backgroundColor: locationEnabled ? "#2563EB" : "#D1D5DB" }}
+              style={{ backgroundColor: locationEnabled ? "#1A3072" : "#D1D5DB" }}
             >
               <span
                 className="absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-all"
@@ -1459,7 +1459,7 @@ function HomeTab({
       {/* Welcome card */}
       <div
         className="rounded-2xl p-5 text-white relative overflow-hidden"
-        style={{ background: "linear-gradient(135deg, #2563EB 0%, #3B82F6 60%, #10B981 120%)" }}
+        style={{ background: "linear-gradient(135deg, #1A3072 0%, #1A3072 60%, #10B981 120%)" }}
       >
         <div className="relative z-10">
           <p className="text-sm text-white/80">Bonjour 👋</p>
@@ -1478,7 +1478,7 @@ function HomeTab({
         >
           <div
             className="w-10 h-10 rounded-xl flex items-center justify-center"
-            style={{ backgroundColor: "#EFF6FF" }}
+            style={{ backgroundColor: "#EEF1F8" }}
           >
             <Search className="w-5 h-5 text-blue-600" />
           </div>
@@ -1502,7 +1502,7 @@ function HomeTab({
         >
           <div
             className="w-10 h-10 rounded-xl flex items-center justify-center"
-            style={{ backgroundColor: "#FFF7ED" }}
+            style={{ backgroundColor: "#FFF3E6" }}
           >
             <MapPin className="w-5 h-5 text-orange-500" />
           </div>
@@ -1511,9 +1511,9 @@ function HomeTab({
         <button className="flex flex-col items-center gap-2 bg-white rounded-2xl p-4 border border-gray-100 hover:border-blue-200 transition">
           <div
             className="w-10 h-10 rounded-xl flex items-center justify-center"
-            style={{ backgroundColor: "#F5F3FF" }}
+            style={{ backgroundColor: "#FFF3E6" }}
           >
-            <Truck className="w-5 h-5" style={{ color: "#8B5CF6" }} />
+            <Truck className="w-5 h-5" style={{ color: "#F47920" }} />
           </div>
           <span className="text-xs font-medium text-gray-700 text-center">Livraison rapide</span>
         </button>
@@ -1538,7 +1538,7 @@ function HomeTab({
             >
               <div
                 className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
-                style={{ backgroundColor: "#EFF6FF" }}
+                style={{ backgroundColor: "#EEF1F8" }}
               >
                 <ClipboardList className="w-4 h-4 text-blue-600" />
               </div>
@@ -1591,7 +1591,7 @@ function SuiviTab({ orders, prescriptions, patientName, onOrderFromOrdonnance }:
       {/* ── Hero ── */}
       <div
         className="rounded-2xl p-5 text-white relative overflow-hidden"
-        style={{ background: "linear-gradient(135deg, #1D4ED8 0%, #2563EB 60%, #3B82F6 100%)" }}
+        style={{ background: "linear-gradient(135deg, #122660 0%, #1A3072 60%, #1A3072 100%)" }}
       >
         <div className="relative z-10">
           <p className="text-xs text-blue-200 mb-1">Tableau de bord santé</p>
@@ -1628,7 +1628,7 @@ function SuiviTab({ orders, prescriptions, patientName, onOrderFromOrdonnance }:
                 <span className="text-2xl font-bold text-gray-900">{value}</span>
                 <span className="text-xs text-gray-400">{unit}</span>
               </div>
-              <p className="text-xs mt-1 font-medium" style={{ color: statusOk ? "#059669" : "#D97706" }}>
+              <p className="text-xs mt-1 font-medium" style={{ color: statusOk ? "#059669" : "#D4680F" }}>
                 {statusOk ? "✓ " : "⚠ "}{status}
               </p>
             </div>
@@ -1651,9 +1651,9 @@ function SuiviTab({ orders, prescriptions, patientName, onOrderFromOrdonnance }:
             <div key={r.name} className="flex items-center gap-3 px-4 py-3">
               <div
                 className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
-                style={{ backgroundColor: r.taken ? "#DCFCE7" : "#EFF6FF" }}
+                style={{ backgroundColor: r.taken ? "#DCFCE7" : "#EEF1F8" }}
               >
-                <Pill className="w-4 h-4" style={{ color: r.taken ? "#059669" : "#2563EB" }} />
+                <Pill className="w-4 h-4" style={{ color: r.taken ? "#059669" : "#1A3072" }} />
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold text-gray-900 truncate">{r.name}</p>
@@ -1665,7 +1665,7 @@ function SuiviTab({ orders, prescriptions, patientName, onOrderFromOrdonnance }:
                   className="text-[10px] px-2 py-0.5 rounded-full font-semibold"
                   style={r.taken
                     ? { backgroundColor: "#DCFCE7", color: "#059669" }
-                    : { backgroundColor: "#EFF6FF", color: "#2563EB" }
+                    : { backgroundColor: "#EEF1F8", color: "#1A3072" }
                   }
                 >
                   {r.taken ? "Pris ✓" : "À prendre"}
@@ -1694,9 +1694,9 @@ function SuiviTab({ orders, prescriptions, patientName, onOrderFromOrdonnance }:
                   <div className="flex items-center gap-3">
                     <div
                       className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
-                      style={{ backgroundColor: p.active ? "#EFF6FF" : "#F3F4F6" }}
+                      style={{ backgroundColor: p.active ? "#EEF1F8" : "#F3F4F6" }}
                     >
-                      <FileText className="w-5 h-5" style={{ color: p.active ? "#2563EB" : "#9CA3AF" }} />
+                      <FileText className="w-5 h-5" style={{ color: p.active ? "#1A3072" : "#9CA3AF" }} />
                     </div>
                     <div>
                       <p className="text-sm font-semibold text-gray-900">{p.doctor}</p>
@@ -1717,7 +1717,7 @@ function SuiviTab({ orders, prescriptions, patientName, onOrderFromOrdonnance }:
                   <button
                     onClick={() => onOrderFromOrdonnance(p.drugs ?? [], p.id)}
                     className="mt-3 w-full py-2 rounded-xl text-white text-xs font-semibold"
-                    style={{ backgroundColor: "#2563EB" }}
+                    style={{ backgroundColor: "#1A3072" }}
                   >
                     Commander cette ordonnance
                   </button>
@@ -1814,19 +1814,19 @@ function BottomNav({
                 <div className="relative">
                   <Icon
                     className="w-6 h-6 transition-colors"
-                    style={{ color: active ? "#2563EB" : "#9CA3AF" }}
+                    style={{ color: active ? "#1A3072" : "#9CA3AF" }}
                   />
                 </div>
                 <span
                   className="text-[10px] font-medium transition-colors"
-                  style={{ color: active ? "#2563EB" : "#9CA3AF" }}
+                  style={{ color: active ? "#1A3072" : "#9CA3AF" }}
                 >
                   {label}
                 </span>
                 {active && (
                   <span
                     className="absolute top-0 left-1/2 -translate-x-1/2 w-6 h-0.5 rounded-full"
-                    style={{ backgroundColor: "#2563EB" }}
+                    style={{ backgroundColor: "#1A3072" }}
                   />
                 )}
               </button>
@@ -1869,12 +1869,12 @@ function SidebarNav({
         <div className="flex items-center gap-3">
           <div
             className="w-10 h-10 rounded-2xl flex items-center justify-center text-white font-bold text-lg"
-            style={{ backgroundColor: "#3B82F6" }}
+            style={{ backgroundColor: "#1A3072" }}
           >
             L
           </div>
           <div>
-            <p className="font-bold text-base" style={{ color: "#2563EB" }}>LAHFIA</p>
+            <p className="font-bold text-base" style={{ color: "#1A3072" }}>LAHFIA</p>
             <p className="text-xs text-gray-400">Espace Patient</p>
           </div>
         </div>
@@ -1890,8 +1890,8 @@ function SidebarNav({
               onClick={() => onTab(key)}
               className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors text-left"
               style={{
-                backgroundColor: active ? "#EFF6FF" : "transparent",
-                color: active ? "#2563EB" : "#4B5563",
+                backgroundColor: active ? "#EEF1F8" : "transparent",
+                color: active ? "#1A3072" : "#4B5563",
               }}
             >
               <Icon className="w-5 h-5 shrink-0" />
@@ -2038,7 +2038,7 @@ export function PatientSpace({ onLogout, userId }: Props) {
     EN_COURS: "En cours", ANALYSEE: "Analysée", ANNULEE: "Annulée",
   };
   const demandeStatutColor: Record<string, string> = {
-    EN_COURS: "#3B82F6", ANALYSEE: "#10B981", ANNULEE: "#EF4444",
+    EN_COURS: "#1A3072", ANALYSEE: "#10B981", ANNULEE: "#EF4444",
   };
   const apiOrderDisplays: OrderDisplay[] = apiDemandes.map((d) => ({
     id: d.id,
@@ -2181,11 +2181,11 @@ export function PatientSpace({ onLogout, userId }: Props) {
           >
             <div
               className="w-9 h-9 rounded-2xl flex items-center justify-center text-white font-bold text-base"
-              style={{ backgroundColor: "#3B82F6" }}
+              style={{ backgroundColor: "#1A3072" }}
             >
               L
             </div>
-            <span className="font-bold text-base" style={{ color: "#2563EB" }}>
+            <span className="font-bold text-base" style={{ color: "#1A3072" }}>
               LAHFIA
             </span>
           </button>
@@ -2205,7 +2205,7 @@ export function PatientSpace({ onLogout, userId }: Props) {
             >
               <Bell
                 className="w-5 h-5"
-                style={{ color: notifOpen ? "#2563EB" : "#6B7280" }}
+                style={{ color: notifOpen ? "#1A3072" : "#6B7280" }}
               />
               {unreadCount > 0 && (
                 <span
@@ -2221,7 +2221,7 @@ export function PatientSpace({ onLogout, userId }: Props) {
             >
               <User
                 className="w-5 h-5"
-                style={{ color: tab === "profile" ? "#2563EB" : "#6B7280" }}
+                style={{ color: tab === "profile" ? "#1A3072" : "#6B7280" }}
               />
             </button>
           </div>
@@ -2250,7 +2250,7 @@ export function PatientSpace({ onLogout, userId }: Props) {
             onClick={() => setNotifOpen(true)}
             className="relative p-2 rounded-full hover:bg-gray-100 ml-1"
           >
-            <Bell className="w-5 h-5" style={{ color: notifOpen ? "#2563EB" : "#6B7280" }} />
+            <Bell className="w-5 h-5" style={{ color: notifOpen ? "#1A3072" : "#6B7280" }} />
             {unreadCount > 0 && (
               <span
                 className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full"

@@ -20,7 +20,7 @@ type Props = {
   onLogout?: () => void;
 };
 
-const GREEN = "#10B981";
+const GREEN = "#1A3072";
 
 const statutLabel: Record<CommandePharmacieAPI["statut"], string> = {
   EN_PREPARATION: "En préparation",
@@ -31,9 +31,9 @@ const statutLabel: Record<CommandePharmacieAPI["statut"], string> = {
 };
 
 const statutColor: Record<CommandePharmacieAPI["statut"], string> = {
-  EN_PREPARATION: "#F59E0B",
+  EN_PREPARATION: "#F47920",
   PRETE:          "#10B981",
-  EN_LIVRAISON:   "#3B82F6",
+  EN_LIVRAISON:   "#1A3072",
   TERMINEE:       "#6B7280",
   ANNULEE:        "#EF4444",
 };
@@ -103,7 +103,7 @@ function PharmacySidebarNav({
           const active = tab === key;
           return (
             <button key={key} onClick={() => onTab(key)} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors text-left"
-              style={{ backgroundColor: active ? "#F0FDF4" : "transparent", color: active ? GREEN : "#4B5563" }}>
+              style={{ backgroundColor: active ? "#EEF1F8" : "transparent", color: active ? GREEN : "#4B5563" }}>
               <Icon className="w-5 h-5 shrink-0" />
               <span className="text-sm font-medium flex-1">{label}</span>
               {badge > 0 && (
@@ -148,7 +148,7 @@ function PharmacyHomeTab({
     <div className="px-4 py-4 space-y-4">
       {/* Welcome card */}
       <div className="rounded-2xl p-5 text-white relative overflow-hidden"
-        style={{ background: "linear-gradient(135deg, #10B981 0%, #3B82F6 100%)" }}>
+        style={{ background: "linear-gradient(135deg, #122660 0%, #1A3072 100%)" }}>
         <div className="relative z-10">
           <p className="text-sm text-white/80">Bienvenue 👋</p>
           <h2 className="text-xl font-bold mt-0.5">{pharmacie?.nom ?? "Pharmacie"}</h2>
@@ -168,11 +168,11 @@ function PharmacyHomeTab({
           <p className="text-2xl font-bold text-gray-900">{thisMonth}</p>
           <p className="text-xs text-gray-500 mt-0.5">Commandes (mois)</p>
         </div>
-        <button onClick={onGoRequests} className="bg-white rounded-2xl p-4 border border-gray-100 text-left hover:border-green-200 transition">
+        <button onClick={onGoRequests} className="bg-white rounded-2xl p-4 border border-gray-100 text-left hover:border-[#D6DCF0] transition">
           <p className="text-2xl font-bold" style={{ color: pendingCount > 0 ? "#EF4444" : GREEN }}>{pendingCount}</p>
           <p className="text-xs text-gray-500 mt-0.5">En attente</p>
         </button>
-        <button onClick={onGoInventory} className="bg-white rounded-2xl p-4 border border-gray-100 text-left hover:border-green-200 transition">
+        <button onClick={onGoInventory} className="bg-white rounded-2xl p-4 border border-gray-100 text-left hover:border-[#D6DCF0] transition">
           <p className="text-2xl font-bold" style={{ color: GREEN }}>
             <Package className="w-6 h-6" style={{ color: GREEN }} />
           </p>
@@ -184,7 +184,7 @@ function PharmacyHomeTab({
       <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
         <div className="px-4 py-3 border-b border-gray-50 flex items-center justify-between">
           <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Commandes récentes</p>
-          <button onClick={onGoRequests} className="text-xs text-green-600">Voir tout →</button>
+          <button onClick={onGoRequests} className="text-xs text-[#1A3072]">Voir tout →</button>
         </div>
         {recentCommandes.length === 0 ? (
           <div className="px-4 py-6 text-center text-sm text-gray-400">Aucune commande pour le moment</div>
@@ -215,8 +215,8 @@ function PharmacyHomeTab({
         <div className="bg-white rounded-2xl border border-gray-100 p-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ backgroundColor: "#F0FDF4" }}>
-                <BarChart3 className="w-5 h-5 text-green-600" />
+              <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ backgroundColor: "#EEF1F8" }}>
+                <BarChart3 className="w-5 h-5 text-[#1A3072]" />
               </div>
               <div>
                 <p className="text-sm font-semibold text-gray-900">Livraison à domicile</p>

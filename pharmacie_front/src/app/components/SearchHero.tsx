@@ -15,7 +15,7 @@ export function SearchHero({ onSearch, onUpload }: Props) {
       className="relative overflow-hidden"
       style={{
         background:
-          "linear-gradient(135deg, #3B82F6 0%, #2563EB 60%, #10B981 120%)",
+          "linear-gradient(135deg, #1A3072 0%, #1A3072 60%, #10B981 120%)",
       }}
     >
       <div className="max-w-4xl mx-auto px-4 py-14 md:py-20 text-center text-white">
@@ -53,7 +53,7 @@ export function SearchHero({ onSearch, onUpload }: Props) {
           <button
             type="submit"
             className="px-5 py-3 rounded-xl text-white"
-            style={{ backgroundColor: "#2563EB" }}
+            style={{ backgroundColor: "#1A3072" }}
           >
             Rechercher
           </button>

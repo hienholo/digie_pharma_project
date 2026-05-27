@@ -81,8 +81,8 @@ export function CheckoutSheet({
                 onClick={() => setPay("cash")}
                 className="flex items-center justify-center gap-2 py-3 rounded-xl border"
                 style={{
-                  borderColor: pay === "cash" ? "#3B82F6" : "#E5E7EB",
-                  backgroundColor: pay === "cash" ? "#EFF6FF" : "white",
+                  borderColor: pay === "cash" ? "#1A3072" : "#E5E7EB",
+                  backgroundColor: pay === "cash" ? "#EEF1F8" : "white",
                 }}
               >
                 <Banknote className="w-4 h-4" />À la livraison
@@ -91,8 +91,8 @@ export function CheckoutSheet({
                 onClick={() => setPay("card")}
                 className="flex items-center justify-center gap-2 py-3 rounded-xl border"
                 style={{
-                  borderColor: pay === "card" ? "#3B82F6" : "#E5E7EB",
-                  backgroundColor: pay === "card" ? "#EFF6FF" : "white",
+                  borderColor: pay === "card" ? "#1A3072" : "#E5E7EB",
+                  backgroundColor: pay === "card" ? "#EEF1F8" : "white",
                 }}
               >
                 <CreditCard className="w-4 h-4" />
@@ -112,14 +112,14 @@ export function CheckoutSheet({
             </div>
             <div className="flex justify-between pt-2">
               <span>Total</span>
-              <span style={{ color: "#2563EB" }}>{total} DA</span>
+              <span style={{ color: "#1A3072" }}>{total} DA</span>
             </div>
           </div>
 
           <button
             onClick={onConfirm}
             className="w-full py-3 rounded-xl text-white"
-            style={{ backgroundColor: "#2563EB" }}
+            style={{ backgroundColor: "#1A3072" }}
           >
             Confirmer la commande
           </button>

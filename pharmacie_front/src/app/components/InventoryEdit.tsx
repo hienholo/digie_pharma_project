@@ -37,7 +37,7 @@ export function InventoryEdit({ onClose, onSave, saving }: Props) {
               type="text"
               value={nomCommercial}
               onChange={(e) => setNomCommercial(e.target.value)}
-              className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:border-green-400"
+              className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:border-[#1A3072]"
               placeholder="Ex : Doliprane"
               required
             />
@@ -49,7 +49,7 @@ export function InventoryEdit({ onClose, onSave, saving }: Props) {
               type="text"
               value={nomGenerique}
               onChange={(e) => setNomGenerique(e.target.value)}
-              className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:border-green-400"
+              className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:border-[#1A3072]"
               placeholder="Ex : Paracétamol"
             />
           </div>
@@ -61,7 +61,7 @@ export function InventoryEdit({ onClose, onSave, saving }: Props) {
                 type="text"
                 value={dosage}
                 onChange={(e) => setDosage(e.target.value)}
-                className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:border-green-400"
+                className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:border-[#1A3072]"
                 placeholder="Ex : 1000mg"
               />
             </div>
@@ -71,7 +71,7 @@ export function InventoryEdit({ onClose, onSave, saving }: Props) {
                 type="text"
                 value={forme}
                 onChange={(e) => setForme(e.target.value)}
-                className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:border-green-400"
+                className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:border-[#1A3072]"
                 placeholder="Ex : Comprimé"
               />
             </div>
@@ -84,7 +84,7 @@ export function InventoryEdit({ onClose, onSave, saving }: Props) {
             </button>
             <button type="submit" disabled={saving}
               className="flex-1 py-2.5 rounded-xl text-white flex items-center justify-center gap-2 disabled:opacity-60"
-              style={{ backgroundColor: "#10B981" }}>
+              style={{ backgroundColor: "#1A3072" }}>
               <Save className="w-4 h-4" />
               {saving ? "Ajout…" : "Ajouter"}
             </button>

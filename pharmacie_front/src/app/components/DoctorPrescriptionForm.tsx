@@ -122,8 +122,8 @@ export function DoctorPrescriptionForm({ medecinId, patients, onClose, onCreated
         <div className="px-6 py-4 bg-white border-b border-gray-100">
           <h2 className="font-semibold text-gray-900 mb-3">Patient *</h2>
           {selectedPatient ? (
-            <div className="flex items-center gap-3 p-3 bg-red-50 rounded-xl border border-red-200">
-              <div className="w-10 h-10 bg-red-600 text-white rounded-full flex items-center justify-center font-bold">
+            <div className="flex items-center gap-3 p-3 rounded-xl border" style={{ backgroundColor: "#EEF1F8", borderColor: "#D6DCF0" }}>
+              <div className="w-10 h-10 text-white rounded-full flex items-center justify-center font-bold" style={{ backgroundColor: "#1A3072" }}>
                 {selectedPatient.prenom.charAt(0)}
               </div>
               <div className="flex-1">
@@ -131,8 +131,8 @@ export function DoctorPrescriptionForm({ medecinId, patients, onClose, onCreated
                 <p className="text-xs text-gray-500">{selectedPatient.telephone}</p>
               </div>
               <button type="button" onClick={() => setSelectedPatient(null)}
-                className="p-1 hover:bg-red-100 rounded-full">
-                <X className="w-4 h-4 text-red-600" />
+                className="p-1 hover:bg-gray-200 rounded-full">
+                <X className="w-4 h-4 text-gray-500" />
               </button>
             </div>
           ) : (
@@ -154,7 +154,7 @@ export function DoctorPrescriptionForm({ medecinId, patients, onClose, onCreated
                     <button key={p.id} type="button"
                       onClick={() => { setSelectedPatient(p); setPatientSearch(""); setShowPatientDrop(false); }}
                       className="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center gap-3 border-b border-gray-100 last:border-0">
-                      <div className="w-8 h-8 bg-red-100 text-red-600 rounded-full flex items-center justify-center font-bold text-sm">
+                      <div className="w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm text-white" style={{ backgroundColor: "#1A3072" }}>
                         {p.prenom.charAt(0)}
                       </div>
                       <div>
@@ -172,7 +172,7 @@ export function DoctorPrescriptionForm({ medecinId, patients, onClose, onCreated
         {/* Ajouter médicament */}
         <div className="px-6 py-4 border-b border-gray-100">
           <h2 className="font-semibold text-gray-900 mb-3">Ajouter un médicament</h2>
-          <div className="bg-blue-50 rounded-xl p-4 border border-blue-200 space-y-3">
+          <div className="rounded-xl p-4 border space-y-3" style={{ backgroundColor: "#EEF1F8", borderColor: "#D6DCF0" }}>
             {/* Médicament search */}
             <div className="relative">
               <div className="flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-300 rounded-xl">
@@ -211,14 +211,14 @@ export function DoctorPrescriptionForm({ medecinId, patients, onClose, onCreated
                 <label className="text-xs font-medium text-gray-600 block mb-1">Quantité</label>
                 <input type="number" min={1} value={quantite}
                   onChange={(e) => setQuantite(parseInt(e.target.value) || 1)}
-                  className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-sm focus:outline-none focus:border-blue-500" />
+                  className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-sm focus:outline-none focus:border-[#1A3072]" />
               </div>
               <div>
                 <label className="text-xs font-medium text-gray-600 block mb-1">Durée</label>
                 <input type="text" value={duree}
                   onChange={(e) => setDuree(e.target.value)}
                   placeholder="Ex : 7 jours"
-                  className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-sm focus:outline-none focus:border-blue-500" />
+                  className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-sm focus:outline-none focus:border-[#1A3072]" />
               </div>
             </div>
 
@@ -227,7 +227,7 @@ export function DoctorPrescriptionForm({ medecinId, patients, onClose, onCreated
               <input type="text" value={posologie}
                 onChange={(e) => setPosologie(e.target.value)}
                 placeholder="Ex : 1 comprimé matin et soir"
-                className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-sm focus:outline-none focus:border-blue-500" />
+                className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-sm focus:outline-none focus:border-[#1A3072]" />
             </div>
 
             <div>
@@ -235,11 +235,11 @@ export function DoctorPrescriptionForm({ medecinId, patients, onClose, onCreated
               <input type="text" value={instructions}
                 onChange={(e) => setInstructions(e.target.value)}
                 placeholder="Ex : À prendre pendant les repas"
-                className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-sm focus:outline-none focus:border-blue-500" />
+                className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-sm focus:outline-none focus:border-[#1A3072]" />
             </div>
 
             <button type="button" onClick={addLigne} disabled={!selectedMed}
-              className="w-full py-2.5 bg-blue-600 text-white rounded-xl font-medium text-sm flex items-center justify-center gap-2 disabled:opacity-50 transition hover:bg-blue-700">
+              className="w-full py-2.5 text-white rounded-xl font-medium text-sm flex items-center justify-center gap-2 disabled:opacity-50 transition" style={{ backgroundColor: "#1A3072" }} onMouseEnter={e=>(e.currentTarget.style.backgroundColor="#122660")} onMouseLeave={e=>(e.currentTarget.style.backgroundColor="#1A3072")}>
               <Plus className="w-4 h-4" />
               Ajouter ce médicament
             </button>
@@ -265,8 +265,8 @@ export function DoctorPrescriptionForm({ medecinId, patients, onClose, onCreated
                     </div>
                   </div>
                   <button type="button" onClick={() => removeLigne(l.tempId)}
-                    className="p-1.5 hover:bg-red-50 rounded-lg transition">
-                    <X className="w-4 h-4 text-red-500" />
+                    className="p-1.5 hover:bg-gray-100 rounded-lg transition">
+                    <X className="w-4 h-4 text-gray-400" />
                   </button>
                 </div>
               ))}

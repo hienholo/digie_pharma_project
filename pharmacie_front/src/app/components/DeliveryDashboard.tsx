@@ -20,9 +20,9 @@ const STATUT_LABEL: Record<LivraisonAPI["statut"], string> = {
 };
 
 const STATUT_COLOR: Record<LivraisonAPI["statut"], string> = {
-  EN_ATTENTE_LIVREUR: "#F59E0B",
-  ASSIGNEE:           "#3B82F6",
-  EN_COURS:           "#8B5CF6",
+  EN_ATTENTE_LIVREUR: "#F47920",
+  ASSIGNEE:           "#1A3072",
+  EN_COURS:           "#F47920",
   LIVREE:             "#10B981",
   ECHEC:              "#EF4444",
 };
@@ -43,15 +43,15 @@ function DeliveryNav({ tab, activeCount, onTab }: { tab: DeliveryTab; activeCoun
           return (
             <button key={key} onClick={() => onTab(key)} className="flex flex-col items-center gap-1 flex-1 py-1 relative">
               <div className="relative">
-                <Icon className="w-6 h-6 transition-colors" style={{ color: active ? "#F59E0B" : "#9CA3AF" }} />
+                <Icon className="w-6 h-6 transition-colors" style={{ color: active ? "#F47920" : "#9CA3AF" }} />
                 {key === "deliveries" && activeCount > 0 && (
                   <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full flex items-center justify-center text-white font-bold bg-red-500" style={{ fontSize: "9px" }}>
                     {activeCount > 9 ? "9+" : activeCount}
                   </span>
                 )}
               </div>
-              <span className="text-[10px] font-medium transition-colors" style={{ color: active ? "#F59E0B" : "#9CA3AF" }}>{label}</span>
-              {active && <span className="absolute top-0 left-1/2 -translate-x-1/2 w-6 h-0.5 rounded-full" style={{ backgroundColor: "#F59E0B" }} />}
+              <span className="text-[10px] font-medium transition-colors" style={{ color: active ? "#F47920" : "#9CA3AF" }}>{label}</span>
+              {active && <span className="absolute top-0 left-1/2 -translate-x-1/2 w-6 h-0.5 rounded-full" style={{ backgroundColor: "#F47920" }} />}
             </button>
           );
         })}
@@ -70,11 +70,11 @@ function DeliverySidebarNav({ tab, activeCount, onTab, onLogout }: { tab: Delive
     <aside className="hidden lg:flex flex-col shrink-0 border-r border-gray-200 bg-white" style={{ width: 240 }}>
       <div className="px-5 py-5 border-b border-gray-100">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl flex items-center justify-center text-white" style={{ backgroundColor: "#F59E0B" }}>
+          <div className="w-10 h-10 rounded-2xl flex items-center justify-center text-white" style={{ backgroundColor: "#F47920" }}>
             <Truck className="w-5 h-5" />
           </div>
           <div>
-            <p className="font-bold text-base" style={{ color: "#D97706" }}>Livreur</p>
+            <p className="font-bold text-base" style={{ color: "#D4680F" }}>Livreur</p>
             <p className="text-xs text-gray-400">Espace Livraison</p>
           </div>
         </div>
@@ -84,7 +84,7 @@ function DeliverySidebarNav({ tab, activeCount, onTab, onLogout }: { tab: Delive
           const active = tab === key;
           return (
             <button key={key} onClick={() => onTab(key)} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors text-left"
-              style={{ backgroundColor: active ? "#FFFBEB" : "transparent", color: active ? "#D97706" : "#4B5563" }}>
+              style={{ backgroundColor: active ? "#FFF3E6" : "transparent", color: active ? "#D4680F" : "#4B5563" }}>
               <Icon className="w-5 h-5 shrink-0" />
               <span className="text-sm font-medium flex-1">{label}</span>
               {key === "deliveries" && activeCount > 0 && (
@@ -115,7 +115,7 @@ function DeliveryHomeTab({ livraisons, onGoDeliveries }: { livraisons: Livraison
   return (
     <div className="px-4 py-4 space-y-4">
       <div className="rounded-2xl p-5 text-white relative overflow-hidden"
-        style={{ background: "linear-gradient(135deg, #F59E0B 0%, #EF4444 100%)" }}>
+        style={{ background: "linear-gradient(135deg, #F47920 0%, #EF4444 100%)" }}>
         <div className="relative z-10">
           <p className="text-sm text-white/80">Bonjour 👋</p>
           <h2 className="text-xl font-bold mt-0.5">Espace Livreur</h2>
@@ -127,7 +127,7 @@ function DeliveryHomeTab({ livraisons, onGoDeliveries }: { livraisons: Livraison
 
       <div className="grid grid-cols-2 gap-3">
         <button onClick={onGoDeliveries} className="bg-white rounded-2xl p-4 border border-gray-100 text-left hover:border-amber-200 transition">
-          <p className="text-2xl font-bold" style={{ color: active.length > 0 ? "#F59E0B" : "#10B981" }}>{active.length}</p>
+          <p className="text-2xl font-bold" style={{ color: active.length > 0 ? "#F47920" : "#10B981" }}>{active.length}</p>
           <p className="text-xs text-gray-500 mt-0.5">En cours</p>
         </button>
         <div className="bg-white rounded-2xl p-4 border border-gray-100">
@@ -220,7 +220,7 @@ function DeliveriesTab({
             {l.statut === "ASSIGNEE" && (
               <button onClick={() => onPrendreEnCharge(l.id)}
                 className="w-full py-2.5 rounded-xl text-white text-sm font-medium"
-                style={{ backgroundColor: "#8B5CF6" }}>
+                style={{ backgroundColor: "#1A3072" }}>
                 Récupérer à la pharmacie
               </button>
             )}
@@ -246,7 +246,7 @@ function DeliveryProfileTab({ onLogout, livreurId }: { onLogout?: () => void; li
     <div className="px-4 py-4 space-y-4 pb-6">
       <div className="bg-white rounded-2xl border border-gray-100 p-5">
         <div className="flex items-center gap-4">
-          <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-white text-xl font-bold shrink-0" style={{ backgroundColor: "#F59E0B" }}>
+          <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-white text-xl font-bold shrink-0" style={{ backgroundColor: "#F47920" }}>
             L
           </div>
           <div className="flex-1 min-w-0">
@@ -336,7 +336,7 @@ export function DeliveryDashboard({ onLogout }: Props) {
         <header className="shrink-0 bg-white border-b border-gray-200 lg:hidden">
           <div className="px-4 py-3 flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-2xl flex items-center justify-center text-white" style={{ backgroundColor: "#F59E0B" }}>
+              <div className="w-9 h-9 rounded-2xl flex items-center justify-center text-white" style={{ backgroundColor: "#F47920" }}>
                 <Package className="w-5 h-5" />
               </div>
               <div>

@@ -50,7 +50,7 @@ export function RequestDetail({ request, pharmacieId, onClose, onRepondu }: Prop
           <div>
             <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Patient</p>
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full flex items-center justify-center text-white bg-blue-500 font-semibold">
+              <div className="w-10 h-10 rounded-full flex items-center justify-center text-white bg-[#1A3072] font-semibold">
                 {request.patientPrenom.charAt(0)}
               </div>
               <div>
@@ -67,7 +67,7 @@ export function RequestDetail({ request, pharmacieId, onClose, onRepondu }: Prop
           <div>
             <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Type</p>
             <div className="flex items-center gap-2 text-sm text-gray-700">
-              {request.type === "ORDONNANCE" ? <FileText className="w-4 h-4 text-blue-500" /> : <Package className="w-4 h-4 text-blue-500" />}
+              {request.type === "ORDONNANCE" ? <FileText className="w-4 h-4 text-[#1A3072]" /> : <Package className="w-4 h-4 text-[#1A3072]" />}
               {request.type === "ORDONNANCE" ? "Ordonnance médicale" : "Médicament(s) spécifique(s)"}
             </div>
           </div>
@@ -108,7 +108,7 @@ export function RequestDetail({ request, pharmacieId, onClose, onRepondu }: Prop
               value={detailPartiel}
               onChange={(e) => setDetailPartiel(e.target.value)}
               placeholder="Ex : Doliprane disponible mais pas Amoxicilline…"
-              className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-blue-400 resize-none"
+              className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#1A3072] resize-none"
               rows={2}
             />
           </div>
@@ -132,7 +132,7 @@ export function RequestDetail({ request, pharmacieId, onClose, onRepondu }: Prop
                 onClick={() => reply("PARTIEL")}
                 disabled={loading}
                 className="flex-1 py-2.5 rounded-xl text-white flex items-center justify-center gap-2 disabled:opacity-50"
-                style={{ backgroundColor: "#F59E0B" }}
+                style={{ backgroundColor: "#1A3072" }}
               >
                 <CheckCircle className="w-4 h-4" />
                 Partiel
@@ -142,7 +142,7 @@ export function RequestDetail({ request, pharmacieId, onClose, onRepondu }: Prop
               onClick={() => reply("DISPONIBLE")}
               disabled={loading}
               className="flex-1 py-2.5 rounded-xl text-white flex items-center justify-center gap-2 disabled:opacity-50"
-              style={{ backgroundColor: "#10B981" }}
+              style={{ backgroundColor: "#1A3072" }}
             >
               <CheckCircle className="w-4 h-4" />
               Disponible

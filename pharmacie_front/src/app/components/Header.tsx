@@ -16,11 +16,11 @@ export function Header({ onNav, current, onLogout }: Props) {
         >
           <div
             className="w-9 h-9 rounded-2xl flex items-center justify-center text-white"
-            style={{ backgroundColor: "#3B82F6" }}
+            style={{ backgroundColor: "#1A3072" }}
           >
             L
           </div>
-          <span style={{ color: "#2563EB" }}>LAHFIA</span>
+          <span style={{ color: "#1A3072" }}>LAHFIA</span>
         </button>
 
         <nav className="hidden md:flex items-center gap-6 text-gray-600">

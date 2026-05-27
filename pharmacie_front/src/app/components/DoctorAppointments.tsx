@@ -4,9 +4,9 @@ import type { RendezVousAPI } from "../lib/types";
 import { rendezVousApi, session } from "../lib/api";
 
 const STATUS_COLORS: Record<string, { bg: string; text: string }> = {
-  EN_ATTENTE: { bg: "#FEF3C7", text: "#D97706" },
+  EN_ATTENTE: { bg: "#FEF3C7", text: "#D4680F" },
   CONFIRME:   { bg: "#DCFCE7", text: "#16A34A" },
-  COMPLETE:   { bg: "#DBEAFE", text: "#0284C7" },
+  COMPLETE:   { bg: "#D6DCF0", text: "#0284C7" },
   ANNULE:     { bg: "#FEE2E2", text: "#DC2626" },
 };
 
@@ -73,7 +73,7 @@ export function DoctorAppointments({ medecinId: medecinIdProp }: Props = {}) {
     const colors = STATUS_COLORS[selected.statut] ?? STATUS_COLORS.EN_ATTENTE;
     return (
       <div className="flex-1 flex flex-col overflow-y-auto">
-        <div className="bg-gradient-to-r from-blue-50 to-blue-100 p-6 border-b border-blue-100">
+        <div className="bg-gradient-to-r from-[#EEF1F8] to-[#D6DCF0] p-6 border-b border-[#EEF1F8]">
           <div className="flex items-start gap-4">
             <div className="w-16 h-16 rounded-full flex items-center justify-center text-2xl font-bold text-white"
               style={{ backgroundColor: colors.text }}>
@@ -96,8 +96,8 @@ export function DoctorAppointments({ medecinId: medecinIdProp }: Props = {}) {
         <div className="p-6 space-y-4">
           <div className="bg-white rounded-2xl p-6 border border-gray-100 space-y-4">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-lg bg-blue-50 flex items-center justify-center">
-                <Calendar className="w-6 h-6 text-blue-600" />
+              <div className="w-12 h-12 rounded-lg bg-[#EEF1F8] flex items-center justify-center">
+                <Calendar className="w-6 h-6 text-[#1A3072]" />
               </div>
               <div>
                 <p className="text-sm text-gray-600">Date &amp; heure</p>
@@ -108,8 +108,8 @@ export function DoctorAppointments({ medecinId: medecinIdProp }: Props = {}) {
             </div>
 
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-lg bg-red-50 flex items-center justify-center">
-                <Phone className="w-6 h-6 text-red-600" />
+              <div className="w-12 h-12 rounded-lg flex items-center justify-center" style={{ backgroundColor: "#EEF1F8" }}>
+                <Phone className="w-6 h-6" style={{ color: "#1A3072" }} />
               </div>
               <div>
                 <p className="text-sm text-gray-600">Téléphone</p>
@@ -136,7 +136,10 @@ export function DoctorAppointments({ medecinId: medecinIdProp }: Props = {}) {
                 <Check className="w-5 h-5" /> Confirmer
               </button>
               <button onClick={() => handleAnnuler(selected.id)} disabled={actionLoading}
-                className="bg-red-600 text-white rounded-xl py-3 font-medium hover:bg-red-700 transition flex items-center justify-center gap-2 disabled:opacity-50">
+                className="text-white rounded-xl py-3 font-medium transition flex items-center justify-center gap-2 disabled:opacity-50"
+                style={{ backgroundColor: "#6B7280" }}
+                onMouseEnter={e => (e.currentTarget.style.backgroundColor = "#4B5563")}
+                onMouseLeave={e => (e.currentTarget.style.backgroundColor = "#6B7280")}>
                 <X className="w-5 h-5" /> Annuler
               </button>
             </div>
@@ -144,7 +147,10 @@ export function DoctorAppointments({ medecinId: medecinIdProp }: Props = {}) {
 
           {selected.statut === "CONFIRME" && (
             <button onClick={() => handleAnnuler(selected.id)} disabled={actionLoading}
-              className="w-full border border-red-300 text-red-600 rounded-xl py-3 font-medium hover:bg-red-50 transition disabled:opacity-50">
+              className="w-full rounded-xl py-3 font-medium transition disabled:opacity-50"
+              style={{ border: "1px solid #D1D5DB", color: "#6B7280" }}
+              onMouseEnter={e => (e.currentTarget.style.backgroundColor = "#F3F4F6")}
+              onMouseLeave={e => (e.currentTarget.style.backgroundColor = "transparent")}>
               Annuler ce rendez-vous
             </button>
           )}
@@ -162,7 +168,7 @@ export function DoctorAppointments({ medecinId: medecinIdProp }: Props = {}) {
             <button key={f} onClick={() => setFilter(f)}
               className={`px-4 py-2 rounded-lg font-medium transition text-sm ${
                 filter === f
-                  ? f === "ALL" ? "bg-blue-600 text-white"
+                  ? f === "ALL" ? "bg-[#1A3072] text-white"
                     : f === "EN_ATTENTE" ? "bg-amber-600 text-white"
                     : "bg-green-600 text-white"
                   : "bg-gray-100 text-gray-700 hover:bg-gray-200"
@@ -192,7 +198,7 @@ export function DoctorAppointments({ medecinId: medecinIdProp }: Props = {}) {
               const colors = STATUS_COLORS[r.statut] ?? STATUS_COLORS.EN_ATTENTE;
               return (
                 <button key={r.id} onClick={() => setSelected(r)}
-                  className="w-full px-6 py-4 hover:bg-gray-50 transition text-left border-l-4 border-transparent hover:border-blue-600">
+                  className="w-full px-6 py-4 hover:bg-gray-50 transition text-left border-l-4 border-transparent hover:border-[#1A3072]">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3 flex-1 min-w-0">
                       <div className="w-12 h-12 rounded-full flex items-center justify-center font-bold text-white shrink-0"

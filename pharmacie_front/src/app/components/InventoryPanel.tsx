@@ -40,13 +40,13 @@ export function InventoryPanel({ medicaments, onAdd }: Props) {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Rechercher un médicament…"
-              className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:border-green-400"
+              className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:border-[#1A3072]"
             />
           </div>
           <button
             onClick={() => setShowAdd(true)}
             className="px-4 py-2.5 rounded-xl text-white flex items-center gap-2"
-            style={{ backgroundColor: "#10B981" }}
+            style={{ backgroundColor: "#1A3072" }}
           >
             <Plus className="w-4 h-4" />
             <span className="hidden sm:inline">Ajouter</span>

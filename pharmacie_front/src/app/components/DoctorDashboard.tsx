@@ -40,7 +40,7 @@ export function DoctorDashboard({ onLogout }: Props) {
   }, [medecinId]);
 
   const quickStats = [
-    { label: "Patients", value: loading ? "…" : String(patients.length), icon: Users, color: "#DC2626" },
+    { label: "Patients", value: loading ? "…" : String(patients.length), icon: Users, color: "#1A3072" },
     { label: "Ordonnances", value: loading ? "…" : String(ordonnances.length), icon: FileText, color: "#10B981" },
   ];
 
@@ -68,7 +68,7 @@ export function DoctorDashboard({ onLogout }: Props) {
           {/* Profil médecin */}
           {medecin && (
             <div className="mx-4 md:mx-6 mt-4 bg-white rounded-2xl p-4 border border-gray-100 flex items-center gap-3">
-              <div className="w-12 h-12 rounded-full bg-red-100 text-red-600 flex items-center justify-center font-bold text-lg">
+              <div className="w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg text-white" style={{ backgroundColor: "#1A3072" }}>
                 {medecin.prenom.charAt(0)}
               </div>
               <div>
@@ -98,8 +98,8 @@ export function DoctorDashboard({ onLogout }: Props) {
             <h3 className="font-semibold text-gray-900 mb-4">Actions rapides</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <button onClick={() => setCurrentView("appointments")} className="flex items-center gap-3 bg-white rounded-2xl p-4 border border-gray-100 hover:shadow-md transition text-left">
-                <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ backgroundColor: "#2563EB18" }}>
-                  <Calendar className="w-5 h-5 text-blue-600" />
+                <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ backgroundColor: "#1A307218" }}>
+                  <Calendar className="w-5 h-5 text-[#1A3072]" />
                 </div>
                 <div className="flex-1">
                   <p className="font-medium text-gray-900">Gérer RDV</p>
@@ -109,8 +109,8 @@ export function DoctorDashboard({ onLogout }: Props) {
               </button>
 
               <button onClick={() => setCurrentView("patients")} className="flex items-center gap-3 bg-white rounded-2xl p-4 border border-gray-100 hover:shadow-md transition text-left">
-                <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ backgroundColor: "#DC262618" }}>
-                  <Users className="w-5 h-5 text-red-600" />
+                <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ backgroundColor: "#1A307218" }}>
+                  <Users className="w-5 h-5" style={{ color: "#1A3072" }} />
                 </div>
                 <div className="flex-1">
                   <p className="font-medium text-gray-900">Mes patients</p>
@@ -131,7 +131,7 @@ export function DoctorDashboard({ onLogout }: Props) {
               </button>
 
               <button onClick={() => setCurrentView("appointments")} className="flex items-center gap-3 bg-white rounded-2xl p-4 border border-gray-100 hover:shadow-md transition text-left">
-                <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ backgroundColor: "#F5940B18" }}>
+                <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ backgroundColor: "#F4792018" }}>
                   <Plus className="w-5 h-5 text-amber-600" />
                 </div>
                 <div className="flex-1">
@@ -175,8 +175,8 @@ export function DoctorDashboard({ onLogout }: Props) {
       {/* Sidebar - Desktop */}
       <aside className="hidden md:flex md:w-64 bg-white border-r border-gray-100 flex-col">
         <div className="px-6 py-4 border-b border-gray-100">
-          <div className="flex items-center gap-2 font-bold text-lg text-red-600">
-            <div className="w-8 h-8 rounded-lg bg-red-600 flex items-center justify-center text-white">+</div>
+          <div className="flex items-center gap-2 font-bold text-lg" style={{ color: "#1A3072" }}>
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white" style={{ backgroundColor: "#1A3072" }}>+</div>
             LAHFIA
           </div>
           <p className="text-xs text-gray-500 mt-1">Médecin</p>
@@ -204,8 +204,8 @@ export function DoctorDashboard({ onLogout }: Props) {
         <div className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden">
           <aside className="w-64 bg-white h-full flex flex-col">
             <div className="px-4 py-4 flex items-center justify-between border-b border-gray-100">
-              <div className="flex items-center gap-2 font-bold text-red-600">
-                <div className="w-8 h-8 rounded-lg bg-red-600 flex items-center justify-center text-white">+</div>
+              <div className="flex items-center gap-2 font-bold" style={{ color: "#1A3072" }}>
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white" style={{ backgroundColor: "#1A3072" }}>+</div>
                 LAHFIA
               </div>
               <button onClick={() => setSidebarOpen(false)} className="p-2 hover:bg-gray-100 rounded-lg">
@@ -283,13 +283,14 @@ function NavItem({ icon: Icon, label, active, onClick, badge }: NavItemProps) {
   return (
     <button onClick={onClick}
       className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition ${
-        active ? "bg-red-50 text-red-600" : "text-gray-700 hover:bg-gray-50"
+        active ? "text-white" : "text-gray-700 hover:bg-gray-50"
       }`}
+      style={active ? { backgroundColor: "#1A3072" } : {}}
     >
       <Icon className="w-5 h-5" />
       <span className="flex-1 text-left">{label}</span>
       {badge && (
-        <span className="bg-red-600 text-white text-xs font-semibold px-2 py-1 rounded-full">{badge}</span>
+        <span className="text-white text-xs font-semibold px-2 py-1 rounded-full" style={{ backgroundColor: "#1A3072" }}>{badge}</span>
       )}
     </button>
   );

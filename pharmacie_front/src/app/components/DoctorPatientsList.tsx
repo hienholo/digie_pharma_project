@@ -19,9 +19,9 @@ export function DoctorPatientsList({ patients, loading }: Props) {
   if (selectedPatient) {
     return (
       <div className="flex-1 flex flex-col overflow-y-auto">
-        <div className="bg-gradient-to-r from-red-50 to-red-100 p-6 border-b border-red-100">
+        <div className="p-6 border-b border-gray-100" style={{ background: "linear-gradient(to right, #EEF1F8, #D6DCF0)" }}>
           <div className="flex items-start gap-4">
-            <div className="w-16 h-16 bg-red-600 text-white rounded-full flex items-center justify-center text-2xl font-bold">
+            <div className="w-16 h-16 text-white rounded-full flex items-center justify-center text-2xl font-bold" style={{ backgroundColor: "#1A3072" }}>
               {selectedPatient.prenom.charAt(0)}
             </div>
             <div className="flex-1">
@@ -80,10 +80,10 @@ export function DoctorPatientsList({ patients, loading }: Props) {
           <div className="divide-y divide-gray-100">
             {filtered.map((p) => (
               <button key={p.id} onClick={() => setSelectedPatient(p)}
-                className="w-full px-6 py-4 hover:bg-gray-50 transition text-left border-l-4 border-transparent hover:border-red-600">
+                className="w-full px-6 py-4 hover:bg-gray-50 transition text-left border-l-4 border-transparent" style={{ borderLeftColor: "transparent" }} onMouseEnter={e => (e.currentTarget.style.borderLeftColor = "#1A3072")} onMouseLeave={e => (e.currentTarget.style.borderLeftColor = "transparent")}>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 bg-red-100 text-red-600 rounded-full flex items-center justify-center font-bold">
+                    <div className="w-12 h-12 rounded-full flex items-center justify-center font-bold text-white" style={{ backgroundColor: "#1A3072" }}>
                       {p.prenom.charAt(0)}
                     </div>
                     <div>
@@ -102,7 +102,7 @@ export function DoctorPatientsList({ patients, loading }: Props) {
               {searchTerm ? "Aucun patient trouvé" : "Aucun patient enregistré"}
             </p>
             {searchTerm && (
-              <button onClick={() => setSearchTerm("")} className="text-red-600 hover:underline text-sm mt-2">
+              <button onClick={() => setSearchTerm("")} className="hover:underline text-sm mt-2" style={{ color: "#1A3072" }}>
                 Réinitialiser
               </button>
             )}

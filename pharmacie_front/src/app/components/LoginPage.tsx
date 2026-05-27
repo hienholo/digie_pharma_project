@@ -7,10 +7,9 @@ import logoSrc from "../assets/img/logo.jpeg";
 import { authApi, session } from "../lib/api";
 
 // ── Brand colors ──────────────────────────────────────────────────────────────
-const BLUE      = "#1D6DC2";
-const BLUE_DARK = "#163A6B";
-const ORANGE    = "#F08020";
-const ORANGE_DK = "#D06010";
+const BLUE      = "#1A3072";
+const BLUE_DARK = "#122660";
+const ORANGE    = "#F47920";
 
 type UserRole = "patient" | "pharmacy" | "delivery" | "doctor";
 
@@ -21,15 +20,15 @@ const roles = [
     title: "Patient",
     description: "Rechercher des médicaments et passer des commandes",
     color: BLUE,
-    bg: "#EFF6FF",
+    bg: "#EEF1F8",
   },
   {
     key: "doctor" as UserRole,
     icon: Stethoscope,
     title: "Médecin",
     description: "Gérer vos patients et créer des ordonnances",
-    color: "#DC2626",
-    bg: "#FEF2F2",
+    color: BLUE,
+    bg: "#EEF1F8",
   },
   {
     key: "pharmacy" as UserRole,
@@ -45,7 +44,7 @@ const roles = [
     title: "Livreur",
     description: "Prendre en charge et livrer les commandes",
     color: ORANGE,
-    bg: "#FFF7ED",
+    bg: "#FFF3E6",
   },
 ];
 
@@ -218,7 +217,7 @@ export function LoginPage({ onLogin }: Props) {
               <h1 className="text-2xl lg:text-3xl font-extrabold text-white leading-tight">
                 Votre santé,<br />connectée.
               </h1>
-              <p className="mt-2 text-sm lg:text-base leading-relaxed" style={{ color: "#BFDBFE" }}>
+              <p className="mt-2 text-sm lg:text-base leading-relaxed" style={{ color: "#B8C5E5" }}>
                 Patients, médecins, pharmacies et livreurs —<br />
                 tous réunis sur une seule plateforme.
               </p>
@@ -257,8 +256,8 @@ export function LoginPage({ onLogin }: Props) {
               onClick={() => { setAuthMode("login"); setScreen("roles"); }}
               className="w-full py-4 lg:py-5 rounded-2xl text-white font-semibold text-base lg:text-lg transition active:scale-[0.98]"
               style={{
-                background: `linear-gradient(90deg, ${ORANGE_DK}, ${ORANGE})`,
-                boxShadow: `0 4px 16px ${ORANGE}50`,
+                background: `linear-gradient(90deg, ${BLUE_DARK}, ${BLUE})`,
+                boxShadow: `0 4px 16px ${BLUE}50`,
               }}
             >
               Se connecter
@@ -353,8 +352,8 @@ export function LoginPage({ onLogin }: Props) {
             style={
               selectedRole
                 ? {
-                    background: `linear-gradient(90deg, ${ORANGE_DK}, ${ORANGE})`,
-                    boxShadow: `0 4px 14px ${ORANGE}40`,
+                    background: `linear-gradient(90deg, ${BLUE_DARK}, ${BLUE})`,
+                    boxShadow: `0 4px 14px ${BLUE}40`,
                   }
                 : { backgroundColor: "#E5E7EB", color: "#9CA3AF", cursor: "not-allowed" }
             }
@@ -411,21 +410,21 @@ export function LoginPage({ onLogin }: Props) {
             {authMode === "login" && (
               <>
                 {selectedRole === "pharmacy" ? (
-                  <Field label="Email de la pharmacie" color={currentRole.color}>
+                  <Field label="Email de la pharmacie" color={BLUE}>
                     <input type="email" value={nomPharmacie} onChange={(e) => setNomPharmacie(e.target.value)}
-                      className={inputCls} onFocus={focusStyle(currentRole.color)} onBlur={blurStyle}
+                      className={inputCls} onFocus={focusStyle(BLUE)} onBlur={blurStyle}
                       placeholder="pharmacie@email.ci" required />
                   </Field>
                 ) : (
-                  <Field label="Adresse email" color={currentRole.color}>
+                  <Field label="Adresse email" color={BLUE}>
                     <input type="email" value={email} onChange={(e) => setEmail(e.target.value)}
-                      className={inputCls} onFocus={focusStyle(currentRole.color)} onBlur={blurStyle}
+                      className={inputCls} onFocus={focusStyle(BLUE)} onBlur={blurStyle}
                       placeholder="votre@email.ci" required />
                   </Field>
                 )}
-                <Field label="Mot de passe" color={currentRole.color}>
+                <Field label="Mot de passe" color={BLUE}>
                   <input type="password" value={password} onChange={(e) => setPassword(e.target.value)}
-                    className={inputCls} onFocus={focusStyle(currentRole.color)} onBlur={blurStyle}
+                    className={inputCls} onFocus={focusStyle(BLUE)} onBlur={blurStyle}
                     placeholder="••••••••" required />
                 </Field>
               </>
@@ -468,48 +467,48 @@ export function LoginPage({ onLogin }: Props) {
             {authMode === "register" && selectedRole === "doctor" && (
               <>
                 <div className="grid grid-cols-2 gap-3">
-                  <Field label="Prénom" color="#DC2626">
+                  <Field label="Prénom" color={BLUE}>
                     <input type="text" value={prenom} onChange={(e) => setPrenom(e.target.value)}
-                      className={inputCls} onFocus={focusStyle("#DC2626")} onBlur={blurStyle}
+                      className={inputCls} onFocus={focusStyle(BLUE)} onBlur={blurStyle}
                       placeholder="Marie-Claire" required />
                   </Field>
-                  <Field label="Nom" color="#DC2626">
+                  <Field label="Nom" color={BLUE}>
                     <input type="text" value={nom} onChange={(e) => setNom(e.target.value)}
-                      className={inputCls} onFocus={focusStyle("#DC2626")} onBlur={blurStyle}
+                      className={inputCls} onFocus={focusStyle(BLUE)} onBlur={blurStyle}
                       placeholder="Diomandé" required />
                   </Field>
                 </div>
-                <Field label="Email" color="#DC2626">
+                <Field label="Email" color={BLUE}>
                   <input type="email" value={email} onChange={(e) => setEmail(e.target.value)}
-                    className={inputCls} onFocus={focusStyle("#DC2626")} onBlur={blurStyle}
+                    className={inputCls} onFocus={focusStyle(BLUE)} onBlur={blurStyle}
                     placeholder="docteur@clinique.ci" required />
                 </Field>
-                <Field label="Téléphone" color="#DC2626">
+                <Field label="Téléphone" color={BLUE}>
                   <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)}
-                    className={inputCls} onFocus={focusStyle("#DC2626")} onBlur={blurStyle}
+                    className={inputCls} onFocus={focusStyle(BLUE)} onBlur={blurStyle}
                     placeholder="+225 27 22 00 00 00" required />
                 </Field>
-                <Field label="Numéro d'ordre" color="#DC2626">
+                <Field label="Numéro d'ordre" color={BLUE}>
                   <input type="text" value={numeroOrdre} onChange={(e) => setNumeroOrdre(e.target.value)}
-                    className={inputCls} onFocus={focusStyle("#DC2626")} onBlur={blurStyle}
+                    className={inputCls} onFocus={focusStyle(BLUE)} onBlur={blurStyle}
                     placeholder="CI-MED-12345" required />
                 </Field>
-                <Field label="Spécialité" color="#DC2626">
+                <Field label="Spécialité" color={BLUE}>
                   <select value={specialite} onChange={(e) => setSpecialite(e.target.value)}
-                    className={inputCls} onFocus={focusStyle("#DC2626")} onBlur={blurStyle} required>
+                    className={inputCls} onFocus={focusStyle(BLUE)} onBlur={blurStyle} required>
                     {SPECIALITES.map((s) => (
                       <option key={s.value} value={s.value}>{s.label}</option>
                     ))}
                   </select>
                 </Field>
-                <Field label="Adresse du cabinet (optionnel)" color="#DC2626">
+                <Field label="Adresse du cabinet (optionnel)" color={BLUE}>
                   <input type="text" value={adresseCabinet} onChange={(e) => setAdresseCabinet(e.target.value)}
-                    className={inputCls} onFocus={focusStyle("#DC2626")} onBlur={blurStyle}
+                    className={inputCls} onFocus={focusStyle(BLUE)} onBlur={blurStyle}
                     placeholder="23 Boulevard de la République, Plateau" />
                 </Field>
-                <Field label="Mot de passe" color="#DC2626">
+                <Field label="Mot de passe" color={BLUE}>
                   <input type="password" value={password} onChange={(e) => setPassword(e.target.value)}
-                    className={inputCls} onFocus={focusStyle("#DC2626")} onBlur={blurStyle}
+                    className={inputCls} onFocus={focusStyle(BLUE)} onBlur={blurStyle}
                     placeholder="••••••••" required />
                 </Field>
               </>
@@ -518,24 +517,24 @@ export function LoginPage({ onLogin }: Props) {
             {/* ── REGISTER — Pharmacie ── */}
             {authMode === "register" && selectedRole === "pharmacy" && (
               <>
-                <Field label="Nom de la pharmacie" color="#059669">
+                <Field label="Nom de la pharmacie" color={BLUE}>
                   <input type="text" value={nomPharmacie} onChange={(e) => setNomPharmacie(e.target.value)}
-                    className={inputCls} onFocus={focusStyle("#059669")} onBlur={blurStyle}
+                    className={inputCls} onFocus={focusStyle(BLUE)} onBlur={blurStyle}
                     placeholder="Pharmacie du Plateau" required />
                 </Field>
-                <Field label="Email" color="#059669">
+                <Field label="Email" color={BLUE}>
                   <input type="email" value={email} onChange={(e) => setEmail(e.target.value)}
-                    className={inputCls} onFocus={focusStyle("#059669")} onBlur={blurStyle}
+                    className={inputCls} onFocus={focusStyle(BLUE)} onBlur={blurStyle}
                     placeholder="pharmacie@email.ci" required />
                 </Field>
-                <Field label="Adresse" color="#059669">
+                <Field label="Adresse" color={BLUE}>
                   <input type="text" value={adressePharmacie} onChange={(e) => setAdressePharmacie(e.target.value)}
-                    className={inputCls} onFocus={focusStyle("#059669")} onBlur={blurStyle}
+                    className={inputCls} onFocus={focusStyle(BLUE)} onBlur={blurStyle}
                     placeholder="23 Boulevard de la République, Plateau, Abidjan" required />
                 </Field>
-                <Field label="Téléphone (optionnel)" color="#059669">
+                <Field label="Téléphone (optionnel)" color={BLUE}>
                   <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)}
-                    className={inputCls} onFocus={focusStyle("#059669")} onBlur={blurStyle}
+                    className={inputCls} onFocus={focusStyle(BLUE)} onBlur={blurStyle}
                     placeholder="+225 27 22 00 00 00" />
                 </Field>
                 <label className="flex items-center gap-3 cursor-pointer select-none">
@@ -551,9 +550,9 @@ export function LoginPage({ onLogin }: Props) {
                   </div>
                   <span className="text-sm font-medium text-gray-700">Proposer la livraison à domicile</span>
                 </label>
-                <Field label="Mot de passe" color="#059669">
+                <Field label="Mot de passe" color={BLUE}>
                   <input type="password" value={password} onChange={(e) => setPassword(e.target.value)}
-                    className={inputCls} onFocus={focusStyle("#059669")} onBlur={blurStyle}
+                    className={inputCls} onFocus={focusStyle(BLUE)} onBlur={blurStyle}
                     placeholder="••••••••" required />
                 </Field>
               </>
@@ -563,33 +562,33 @@ export function LoginPage({ onLogin }: Props) {
             {authMode === "register" && selectedRole === "delivery" && (
               <>
                 <div className="grid grid-cols-2 gap-3">
-                  <Field label="Prénom" color={ORANGE}>
+                  <Field label="Prénom" color={BLUE}>
                     <input type="text" value={prenom} onChange={(e) => setPrenom(e.target.value)}
-                      className={inputCls} onFocus={focusStyle(ORANGE)} onBlur={blurStyle}
+                      className={inputCls} onFocus={focusStyle(BLUE)} onBlur={blurStyle}
                       placeholder="Jean-Baptiste" required />
                   </Field>
-                  <Field label="Nom" color={ORANGE}>
+                  <Field label="Nom" color={BLUE}>
                     <input type="text" value={nom} onChange={(e) => setNom(e.target.value)}
-                      className={inputCls} onFocus={focusStyle(ORANGE)} onBlur={blurStyle}
+                      className={inputCls} onFocus={focusStyle(BLUE)} onBlur={blurStyle}
                       placeholder="Koné" required />
                   </Field>
                 </div>
-                <Field label="Email" color={ORANGE}>
+                <Field label="Email" color={BLUE}>
                   <input type="email" value={email} onChange={(e) => setEmail(e.target.value)}
-                    className={inputCls} onFocus={focusStyle(ORANGE)} onBlur={blurStyle}
+                    className={inputCls} onFocus={focusStyle(BLUE)} onBlur={blurStyle}
                     placeholder="livreur@email.ci" required />
                 </Field>
-                <Field label="Téléphone" color={ORANGE}>
+                <Field label="Téléphone" color={BLUE}>
                   <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)}
-                    className={inputCls} onFocus={focusStyle(ORANGE)} onBlur={blurStyle}
+                    className={inputCls} onFocus={focusStyle(BLUE)} onBlur={blurStyle}
                     placeholder="+225 07 00 00 00 00" required />
                 </Field>
-                <Field label="N° Pièce d'identité / Permis (optionnel)" color={ORANGE}>
+                <Field label="N° Pièce d'identité / Permis (optionnel)" color={BLUE}>
                   <input type="text" value={numeroIdentite} onChange={(e) => setNumeroIdentite(e.target.value)}
-                    className={inputCls} onFocus={focusStyle(ORANGE)} onBlur={blurStyle}
+                    className={inputCls} onFocus={focusStyle(BLUE)} onBlur={blurStyle}
                     placeholder="CI19870012345678" />
                 </Field>
-                <Field label="Type d'affiliation" color={ORANGE}>
+                <Field label="Type d'affiliation" color={BLUE}>
                   <div className="flex gap-3">
                     {(["INDEPENDANT", "PARTENAIRE"] as const).map((t) => (
                       <button
@@ -598,9 +597,9 @@ export function LoginPage({ onLogin }: Props) {
                         onClick={() => setTypeAffiliation(t)}
                         className="flex-1 py-3 rounded-xl border-2 text-sm font-semibold transition"
                         style={{
-                          borderColor: typeAffiliation === t ? ORANGE : "#E5E7EB",
-                          backgroundColor: typeAffiliation === t ? ORANGE + "12" : "#FAFAFA",
-                          color: typeAffiliation === t ? ORANGE : "#6B7280",
+                          borderColor: typeAffiliation === t ? BLUE : "#E5E7EB",
+                          backgroundColor: typeAffiliation === t ? BLUE + "12" : "#FAFAFA",
+                          color: typeAffiliation === t ? BLUE : "#6B7280",
                         }}
                       >
                         {t === "INDEPENDANT" ? "Indépendant" : "Partenaire"}
@@ -608,9 +607,9 @@ export function LoginPage({ onLogin }: Props) {
                     ))}
                   </div>
                 </Field>
-                <Field label="Mot de passe" color={ORANGE}>
+                <Field label="Mot de passe" color={BLUE}>
                   <input type="password" value={password} onChange={(e) => setPassword(e.target.value)}
-                    className={inputCls} onFocus={focusStyle(ORANGE)} onBlur={blurStyle}
+                    className={inputCls} onFocus={focusStyle(BLUE)} onBlur={blurStyle}
                     placeholder="••••••••" required />
                 </Field>
               </>
@@ -627,8 +626,8 @@ export function LoginPage({ onLogin }: Props) {
               disabled={loading}
               className="w-full py-4 lg:py-5 rounded-2xl text-white font-semibold text-base lg:text-lg mt-2 transition active:scale-[0.98] disabled:opacity-60"
               style={{
-                background: `linear-gradient(90deg, ${ORANGE_DK}, ${ORANGE})`,
-                boxShadow: `0 4px 16px ${ORANGE}50`,
+                background: `linear-gradient(90deg, ${BLUE_DARK}, ${BLUE})`,
+                boxShadow: `0 4px 16px ${BLUE}50`,
               }}
             >
               {loading ? "Chargement…" : authMode === "login" ? "Se connecter" : "Créer mon compte"}

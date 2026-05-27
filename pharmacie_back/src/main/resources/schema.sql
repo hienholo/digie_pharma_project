@@ -155,7 +155,7 @@ CREATE TABLE IF NOT EXISTS commandes (
     mode_obtention  VARCHAR(20)  NOT NULL CHECK (mode_obtention IN ('RETRAIT','LIVRAISON')),
     statut          VARCHAR(30)  NOT NULL DEFAULT 'EN_PREPARATION'
                         CHECK (statut IN ('EN_PREPARATION','PRETE','EN_LIVRAISON','TERMINEE','ANNULEE')),
-    mode_paiement   VARCHAR(30)  CHECK (mode_paiement IN ('ESPECES','CARTE')),
+    mode_paiement   VARCHAR(30)  CHECK (mode_paiement IN ('A_LA_LIVRAISON','EN_LIGNE')),
     created_at      TIMESTAMP    DEFAULT NOW()
 );
 
