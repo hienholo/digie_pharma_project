@@ -1,13 +1,13 @@
 import { useState, useEffect } from "react";
 import {
   Package, MapPin, Clock, CheckCircle, Navigation, LogOut,
-  Home, User, Truck, History, ChevronRight, Settings, HelpCircle,
-  Shield, Star, RefreshCw,
+  Home, User, Truck, ChevronRight, Settings, HelpCircle,
+  Shield, Star, RefreshCw, Bell,
 } from "lucide-react";
 import { livraisonsApi, session } from "../lib/api";
 import type { LivraisonAPI } from "../lib/types";
 
-type DeliveryTab = "home" | "deliveries" | "profile";
+type DeliveryTab = "home" | "disponibles" | "mesCourses" | "profile";
 
 type Props = { onLogout?: () => void };
 
@@ -27,31 +27,34 @@ const STATUT_COLOR: Record<LivraisonAPI["statut"], string> = {
   ECHEC:              "#EF4444",
 };
 
-// ── Navigation ────────────────────────────────────────────────────────────────
+// ── Navigation ─────────────────────────────────────────────────────────────────
 
-function DeliveryNav({ tab, activeCount, onTab }: { tab: DeliveryTab; activeCount: number; onTab: (t: DeliveryTab) => void }) {
+function DeliveryNav({
+  tab, disponiblesCount, activeCount, onTab,
+}: { tab: DeliveryTab; disponiblesCount: number; activeCount: number; onTab: (t: DeliveryTab) => void }) {
   const tabs = [
     { key: "home" as const, icon: Home, label: "Accueil" },
-    { key: "deliveries" as const, icon: Truck, label: "Livraisons" },
+    { key: "disponibles" as const, icon: Bell, label: "Disponibles", badge: disponiblesCount },
+    { key: "mesCourses" as const, icon: Truck, label: "Mes courses", badge: activeCount },
     { key: "profile" as const, icon: User, label: "Profil" },
   ];
   return (
     <nav className="shrink-0 bg-white border-t border-gray-200 lg:hidden">
-      <div className="flex items-center justify-around px-2 py-2">
-        {tabs.map(({ key, icon: Icon, label }) => {
+      <div className="flex items-center justify-around px-1 py-2">
+        {tabs.map(({ key, icon: Icon, label, badge }) => {
           const active = tab === key;
           return (
             <button key={key} onClick={() => onTab(key)} className="flex flex-col items-center gap-1 flex-1 py-1 relative">
               <div className="relative">
-                <Icon className="w-6 h-6 transition-colors" style={{ color: active ? "#F47920" : "#9CA3AF" }} />
-                {key === "deliveries" && activeCount > 0 && (
+                <Icon className="w-5 h-5 transition-colors" style={{ color: active ? "#1A3072" : "#9CA3AF" }} />
+                {badge != null && badge > 0 && (
                   <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full flex items-center justify-center text-white font-bold bg-red-500" style={{ fontSize: "9px" }}>
-                    {activeCount > 9 ? "9+" : activeCount}
+                    {badge > 9 ? "9+" : badge}
                   </span>
                 )}
               </div>
-              <span className="text-[10px] font-medium transition-colors" style={{ color: active ? "#F47920" : "#9CA3AF" }}>{label}</span>
-              {active && <span className="absolute top-0 left-1/2 -translate-x-1/2 w-6 h-0.5 rounded-full" style={{ backgroundColor: "#F47920" }} />}
+              <span className="text-[10px] font-medium transition-colors" style={{ color: active ? "#1A3072" : "#9CA3AF" }}>{label}</span>
+              {active && <span className="absolute top-0 left-1/2 -translate-x-1/2 w-6 h-0.5 rounded-full" style={{ backgroundColor: "#1A3072" }} />}
             </button>
           );
         })}
@@ -60,36 +63,39 @@ function DeliveryNav({ tab, activeCount, onTab }: { tab: DeliveryTab; activeCoun
   );
 }
 
-function DeliverySidebarNav({ tab, activeCount, onTab, onLogout }: { tab: DeliveryTab; activeCount: number; onTab: (t: DeliveryTab) => void; onLogout?: () => void }) {
+function DeliverySidebarNav({
+  tab, disponiblesCount, activeCount, onTab, onLogout,
+}: { tab: DeliveryTab; disponiblesCount: number; activeCount: number; onTab: (t: DeliveryTab) => void; onLogout?: () => void }) {
   const tabs = [
     { key: "home" as const, icon: Home, label: "Accueil" },
-    { key: "deliveries" as const, icon: Truck, label: "Livraisons" },
+    { key: "disponibles" as const, icon: Bell, label: "Disponibles", badge: disponiblesCount },
+    { key: "mesCourses" as const, icon: Truck, label: "Mes courses", badge: activeCount },
     { key: "profile" as const, icon: User, label: "Profil" },
   ];
   return (
     <aside className="hidden lg:flex flex-col shrink-0 border-r border-gray-200 bg-white" style={{ width: 240 }}>
       <div className="px-5 py-5 border-b border-gray-100">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl flex items-center justify-center text-white" style={{ backgroundColor: "#F47920" }}>
+          <div className="w-10 h-10 rounded-2xl flex items-center justify-center text-white" style={{ backgroundColor: "#1A3072" }}>
             <Truck className="w-5 h-5" />
           </div>
           <div>
-            <p className="font-bold text-base" style={{ color: "#D4680F" }}>Livreur</p>
+            <p className="font-bold text-base" style={{ color: "#1A3072" }}>Livreur</p>
             <p className="text-xs text-gray-400">Espace Livraison</p>
           </div>
         </div>
       </div>
       <nav className="flex-1 px-3 py-4 space-y-1">
-        {tabs.map(({ key, icon: Icon, label }) => {
+        {tabs.map(({ key, icon: Icon, label, badge }) => {
           const active = tab === key;
           return (
             <button key={key} onClick={() => onTab(key)} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors text-left"
-              style={{ backgroundColor: active ? "#FFF3E6" : "transparent", color: active ? "#D4680F" : "#4B5563" }}>
+              style={{ backgroundColor: active ? "#EEF1F8" : "transparent", color: active ? "#1A3072" : "#4B5563" }}>
               <Icon className="w-5 h-5 shrink-0" />
               <span className="text-sm font-medium flex-1">{label}</span>
-              {key === "deliveries" && activeCount > 0 && (
+              {badge != null && badge > 0 && (
                 <span className="w-5 h-5 rounded-full flex items-center justify-center text-white font-bold shrink-0 bg-red-500" style={{ fontSize: "10px" }}>
-                  {activeCount > 9 ? "9+" : activeCount}
+                  {badge > 9 ? "9+" : badge}
                 </span>
               )}
             </button>
@@ -106,16 +112,19 @@ function DeliverySidebarNav({ tab, activeCount, onTab, onLogout }: { tab: Delive
   );
 }
 
-// ── Home tab ──────────────────────────────────────────────────────────────────
+// ── Home tab ────────────────────────────────────────────────────────────────────
 
-function DeliveryHomeTab({ livraisons, onGoDeliveries }: { livraisons: LivraisonAPI[]; onGoDeliveries: () => void }) {
-  const active = livraisons.filter((l) => l.statut === "ASSIGNEE" || l.statut === "EN_COURS");
-  const done   = livraisons.filter((l) => l.statut === "LIVREE").length;
+function DeliveryHomeTab({
+  mesCourses, disponibles, onGoDisponibles, onGoMesCourses,
+}: { mesCourses: LivraisonAPI[]; disponibles: LivraisonAPI[]; onGoDisponibles: () => void; onGoMesCourses: () => void }) {
+  const active = mesCourses.filter((l) => l.statut === "ASSIGNEE" || l.statut === "EN_COURS");
+  const done   = mesCourses.filter((l) => l.statut === "LIVREE").length;
 
   return (
     <div className="px-4 py-4 space-y-4">
+      {/* Hero */}
       <div className="rounded-2xl p-5 text-white relative overflow-hidden"
-        style={{ background: "linear-gradient(135deg, #F47920 0%, #EF4444 100%)" }}>
+        style={{ background: "linear-gradient(135deg, #122660 0%, #1A3072 100%)" }}>
         <div className="relative z-10">
           <p className="text-sm text-white/80">Bonjour 👋</p>
           <h2 className="text-xl font-bold mt-0.5">Espace Livreur</h2>
@@ -125,9 +134,14 @@ function DeliveryHomeTab({ livraisons, onGoDeliveries }: { livraisons: Livraison
         <div className="absolute -right-2 top-10 w-14 h-14 rounded-full bg-white/10" />
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
-        <button onClick={onGoDeliveries} className="bg-white rounded-2xl p-4 border border-gray-100 text-left hover:border-amber-200 transition">
-          <p className="text-2xl font-bold" style={{ color: active.length > 0 ? "#F47920" : "#10B981" }}>{active.length}</p>
+      {/* Stats */}
+      <div className="grid grid-cols-3 gap-3">
+        <button onClick={onGoDisponibles} className="bg-white rounded-2xl p-4 border border-gray-100 text-left hover:shadow-sm transition">
+          <p className="text-2xl font-bold" style={{ color: disponibles.length > 0 ? "#F47920" : "#9CA3AF" }}>{disponibles.length}</p>
+          <p className="text-xs text-gray-500 mt-0.5">Disponibles</p>
+        </button>
+        <button onClick={onGoMesCourses} className="bg-white rounded-2xl p-4 border border-gray-100 text-left hover:shadow-sm transition">
+          <p className="text-2xl font-bold" style={{ color: active.length > 0 ? "#1A3072" : "#9CA3AF" }}>{active.length}</p>
           <p className="text-xs text-gray-500 mt-0.5">En cours</p>
         </button>
         <div className="bg-white rounded-2xl p-4 border border-gray-100">
@@ -136,11 +150,41 @@ function DeliveryHomeTab({ livraisons, onGoDeliveries }: { livraisons: Livraison
         </div>
       </div>
 
+      {/* Livraisons disponibles à prendre */}
+      {disponibles.length > 0 && (
+        <div className="bg-white rounded-2xl border border-orange-100 overflow-hidden">
+          <div className="px-4 py-3 border-b flex items-center justify-between" style={{ backgroundColor: "#FFF3E6", borderColor: "#FED7AA" }}>
+            <div className="flex items-center gap-2">
+              <Bell className="w-4 h-4" style={{ color: "#F47920" }} />
+              <p className="text-xs font-semibold" style={{ color: "#D4680F" }}>Livraisons disponibles</p>
+            </div>
+            <button onClick={onGoDisponibles} className="text-xs font-medium" style={{ color: "#F47920" }}>Voir tout →</button>
+          </div>
+          <div className="divide-y divide-gray-50">
+            {disponibles.slice(0, 2).map((l) => (
+              <div key={l.id} className="px-4 py-3 flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: "#FFF3E6" }}>
+                  <Package className="w-4 h-4" style={{ color: "#F47920" }} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-gray-900">Commande #{l.commandeId?.slice(-6) ?? l.id.slice(-6)}</p>
+                  <p className="text-xs text-gray-500 truncate">{l.adresseLivraison ?? "Adresse non disponible"}</p>
+                </div>
+                <button onClick={onGoDisponibles} className="text-xs px-2.5 py-1 rounded-full text-white font-medium shrink-0" style={{ backgroundColor: "#F47920" }}>
+                  Prendre
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Courses actives */}
       {active.length > 0 && (
         <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
           <div className="px-4 py-3 border-b border-gray-50 flex items-center justify-between">
-            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Livraisons actives</p>
-            <button onClick={onGoDeliveries} className="text-xs text-amber-600">Voir tout →</button>
+            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Mes courses actives</p>
+            <button onClick={onGoMesCourses} className="text-xs font-medium" style={{ color: "#1A3072" }}>Voir tout →</button>
           </div>
           <div className="divide-y divide-gray-50">
             {active.slice(0, 2).map((l) => (
@@ -164,9 +208,90 @@ function DeliveryHomeTab({ livraisons, onGoDeliveries }: { livraisons: Livraison
   );
 }
 
-// ── Deliveries tab ────────────────────────────────────────────────────────────
+// ── Disponibles tab ─────────────────────────────────────────────────────────────
 
-function DeliveriesTab({
+function DisponiblesTab({
+  disponibles, loading, onRefresh, onSeProposer,
+}: {
+  disponibles: LivraisonAPI[];
+  loading: boolean;
+  onRefresh: () => void;
+  onSeProposer: (id: string) => Promise<void>;
+}) {
+  const [proposing, setProposing] = useState<string | null>(null);
+
+  const handleProposer = async (id: string) => {
+    setProposing(id);
+    await onSeProposer(id);
+    setProposing(null);
+  };
+
+  return (
+    <div className="px-4 py-4 space-y-3">
+      <div className="flex items-center justify-between mb-1">
+        <div>
+          <p className="text-sm font-semibold text-gray-700">{disponibles.length} livraison(s) disponible(s)</p>
+          <p className="text-xs text-gray-400 mt-0.5">Proposez-vous pour prendre une course</p>
+        </div>
+        <button onClick={onRefresh} className="p-2 hover:bg-gray-100 rounded-lg transition">
+          <RefreshCw className={`w-4 h-4 text-gray-500 ${loading ? "animate-spin" : ""}`} />
+        </button>
+      </div>
+
+      {disponibles.length === 0 ? (
+        <div className="bg-white rounded-2xl p-8 border border-gray-200 text-center">
+          <Package className="w-12 h-12 mx-auto text-gray-300 mb-3" />
+          <p className="text-gray-500 font-medium">Aucune livraison disponible</p>
+          <p className="text-xs text-gray-400 mt-1">Revenez plus tard ou actualisez</p>
+        </div>
+      ) : (
+        disponibles.map((l) => (
+          <div key={l.id} className="bg-white rounded-2xl p-4 border border-gray-200">
+            {/* En-tête */}
+            <div className="flex items-start justify-between mb-3">
+              <div>
+                <p className="text-sm font-semibold text-gray-900">Commande #{l.commandeId?.slice(-8) ?? l.id.slice(-8)}</p>
+                <p className="text-xs text-gray-400 mt-0.5">Livraison #{l.id.slice(-8)}</p>
+              </div>
+              <span className="px-2.5 py-1 rounded-full text-xs text-white font-medium" style={{ backgroundColor: "#F47920" }}>
+                Disponible
+              </span>
+            </div>
+
+            {/* Adresse */}
+            <div className="flex items-start gap-2 mb-3 text-sm text-gray-700">
+              <MapPin className="w-4 h-4 text-gray-400 mt-0.5 shrink-0" />
+              <span>{l.adresseLivraison ?? "Adresse non disponible"}</span>
+            </div>
+
+            {/* Date */}
+            {l.createdAt && (
+              <div className="flex items-center gap-2 mb-4 text-xs text-gray-400">
+                <Clock className="w-3.5 h-3.5" />
+                Commandé le {new Date(l.createdAt).toLocaleString("fr-FR", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+              </div>
+            )}
+
+            {/* Bouton se proposer */}
+            <button
+              onClick={() => handleProposer(l.id)}
+              disabled={proposing === l.id}
+              className="w-full py-2.5 rounded-xl text-white text-sm font-medium flex items-center justify-center gap-2 disabled:opacity-60 transition"
+              style={{ backgroundColor: "#1A3072" }}
+            >
+              <Truck className="w-4 h-4" />
+              {proposing === l.id ? "Envoi…" : "Me proposer pour cette livraison"}
+            </button>
+          </div>
+        ))
+      )}
+    </div>
+  );
+}
+
+// ── Mes courses tab ─────────────────────────────────────────────────────────────
+
+function MesCoursesTab({
   livraisons, loading, onRefresh, onPrendreEnCharge, onConfirmer,
 }: {
   livraisons: LivraisonAPI[];
@@ -175,78 +300,127 @@ function DeliveriesTab({
   onPrendreEnCharge: (id: string) => Promise<void>;
   onConfirmer: (id: string) => Promise<void>;
 }) {
-  const active = livraisons.filter((l) => l.statut === "ASSIGNEE" || l.statut === "EN_COURS");
+  const active  = livraisons.filter((l) => l.statut === "ASSIGNEE" || l.statut === "EN_COURS");
+  const history = livraisons.filter((l) => l.statut === "LIVREE" || l.statut === "ECHEC");
 
   return (
     <div className="px-4 py-4 space-y-3">
       <div className="flex items-center justify-between mb-1">
-        <p className="text-sm font-semibold text-gray-700">{active.length} livraison(s) active(s)</p>
+        <p className="text-sm font-semibold text-gray-700">{active.length} course(s) active(s)</p>
         <button onClick={onRefresh} className="p-2 hover:bg-gray-100 rounded-lg transition">
           <RefreshCw className={`w-4 h-4 text-gray-500 ${loading ? "animate-spin" : ""}`} />
         </button>
       </div>
 
-      {active.length === 0 ? (
+      {active.length === 0 && (
         <div className="bg-white rounded-2xl p-8 border border-gray-200 text-center">
-          <Package className="w-12 h-12 mx-auto text-gray-300 mb-3" />
-          <p className="text-gray-500">Aucune livraison assignée</p>
-          <p className="text-xs text-gray-400 mt-1">La pharmacie vous assignera une livraison</p>
+          <Truck className="w-12 h-12 mx-auto text-gray-300 mb-3" />
+          <p className="text-gray-500 font-medium">Aucune course en cours</p>
+          <p className="text-xs text-gray-400 mt-1">Allez dans "Disponibles" pour prendre une commande</p>
         </div>
-      ) : (
-        active.map((l) => (
-          <div key={l.id} className="bg-white rounded-2xl p-4 border border-gray-200">
-            <div className="flex items-start justify-between mb-3">
-              <div>
-                <p className="text-xs text-gray-500">Livraison #{l.id.slice(-8)}</p>
-                {l.commandeId && <p className="text-xs text-gray-400">Commande #{l.commandeId.slice(-8)}</p>}
-              </div>
-              <span className="px-3 py-1 rounded-full text-xs text-white font-medium" style={{ backgroundColor: STATUT_COLOR[l.statut] }}>
-                {STATUT_LABEL[l.statut]}
-              </span>
+      )}
+
+      {active.map((l) => (
+        <div key={l.id} className="bg-white rounded-2xl p-4 border border-gray-200">
+          <div className="flex items-start justify-between mb-3">
+            <div>
+              <p className="text-xs text-gray-500">Livraison #{l.id.slice(-8)}</p>
+              {l.commandeId && <p className="text-xs text-gray-400">Commande #{l.commandeId.slice(-8)}</p>}
             </div>
-
-            <div className="flex items-start gap-2 mb-3 text-sm text-gray-700">
-              <MapPin className="w-4 h-4 text-gray-400 mt-0.5 shrink-0" />
-              <span>{l.adresseLivraison ?? "Adresse non disponible"}</span>
-            </div>
-
-            {l.assigneeAt && (
-              <div className="flex items-center gap-2 mb-3 text-xs text-gray-500">
-                <Clock className="w-3.5 h-3.5" />
-                Assignée le {new Date(l.assigneeAt).toLocaleString("fr-FR", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
-              </div>
-            )}
-
-            {l.statut === "ASSIGNEE" && (
-              <button onClick={() => onPrendreEnCharge(l.id)}
-                className="w-full py-2.5 rounded-xl text-white text-sm font-medium"
-                style={{ backgroundColor: "#1A3072" }}>
-                Récupérer à la pharmacie
-              </button>
-            )}
-            {l.statut === "EN_COURS" && (
-              <button onClick={() => onConfirmer(l.id)}
-                className="w-full py-2.5 rounded-xl text-white text-sm font-medium"
-                style={{ backgroundColor: "#10B981" }}>
-                <CheckCircle className="w-4 h-4 inline mr-1" />
-                Confirmer la livraison
-              </button>
-            )}
+            <span className="px-3 py-1 rounded-full text-xs text-white font-medium" style={{ backgroundColor: STATUT_COLOR[l.statut] }}>
+              {STATUT_LABEL[l.statut]}
+            </span>
           </div>
-        ))
+
+          {/* Progression visuelle */}
+          <div className="flex items-center gap-1 mb-3">
+            {(["ASSIGNEE", "EN_COURS", "LIVREE"] as const).map((s, i) => {
+              const steps: LivraisonAPI["statut"][] = ["ASSIGNEE", "EN_COURS", "LIVREE"];
+              const currentIdx = steps.indexOf(l.statut as typeof steps[number]);
+              const done = i <= currentIdx;
+              return (
+                <div key={s} className="flex items-center gap-1 flex-1">
+                  <div className="w-5 h-5 rounded-full flex items-center justify-center shrink-0 text-white text-xs font-bold"
+                    style={{ backgroundColor: done ? "#1A3072" : "#E5E7EB" }}>
+                    {done ? "✓" : i + 1}
+                  </div>
+                  {i < 2 && <div className="flex-1 h-0.5 rounded" style={{ backgroundColor: i < currentIdx ? "#1A3072" : "#E5E7EB" }} />}
+                </div>
+              );
+            })}
+          </div>
+          <div className="flex justify-between text-xs text-gray-400 mb-3">
+            <span>Assignée</span>
+            <span>En cours</span>
+            <span>Livrée</span>
+          </div>
+
+          <div className="flex items-start gap-2 mb-3 text-sm text-gray-700">
+            <MapPin className="w-4 h-4 text-gray-400 mt-0.5 shrink-0" />
+            <span>{l.adresseLivraison ?? "Adresse non disponible"}</span>
+          </div>
+
+          {l.assigneeAt && (
+            <div className="flex items-center gap-2 mb-3 text-xs text-gray-500">
+              <Clock className="w-3.5 h-3.5" />
+              Assignée le {new Date(l.assigneeAt).toLocaleString("fr-FR", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+            </div>
+          )}
+
+          {l.statut === "ASSIGNEE" && (
+            <button onClick={() => onPrendreEnCharge(l.id)}
+              className="w-full py-2.5 rounded-xl text-white text-sm font-medium"
+              style={{ backgroundColor: "#1A3072" }}>
+              Récupérer à la pharmacie
+            </button>
+          )}
+          {l.statut === "EN_COURS" && (
+            <button onClick={() => onConfirmer(l.id)}
+              className="w-full py-2.5 rounded-xl text-white text-sm font-medium flex items-center justify-center gap-2"
+              style={{ backgroundColor: "#10B981" }}>
+              <CheckCircle className="w-4 h-4" />
+              Confirmer la livraison
+            </button>
+          )}
+        </div>
+      ))}
+
+      {history.length > 0 && (
+        <div className="mt-2">
+          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2 px-1">Historique</p>
+          <div className="space-y-2">
+            {history.slice(0, 5).map((l) => (
+              <div key={l.id} className="bg-white rounded-xl px-4 py-3 border border-gray-100 flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ backgroundColor: STATUT_COLOR[l.statut] + "20" }}>
+                  {l.statut === "LIVREE"
+                    ? <CheckCircle className="w-4 h-4" style={{ color: "#10B981" }} />
+                    : <Package className="w-4 h-4" style={{ color: "#EF4444" }} />
+                  }
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-gray-800">Commande #{l.commandeId?.slice(-6) ?? l.id.slice(-6)}</p>
+                  {l.livreeAt && <p className="text-xs text-gray-400">{new Date(l.livreeAt).toLocaleDateString("fr-FR")}</p>}
+                </div>
+                <span className="text-xs px-2 py-0.5 rounded-full font-medium text-white shrink-0" style={{ backgroundColor: STATUT_COLOR[l.statut] }}>
+                  {STATUT_LABEL[l.statut]}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
       )}
     </div>
   );
 }
 
-// ── Profile tab ───────────────────────────────────────────────────────────────
+// ── Profile tab ─────────────────────────────────────────────────────────────────
 
 function DeliveryProfileTab({ onLogout, livreurId }: { onLogout?: () => void; livreurId: string }) {
   return (
     <div className="px-4 py-4 space-y-4 pb-6">
       <div className="bg-white rounded-2xl border border-gray-100 p-5">
         <div className="flex items-center gap-4">
-          <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-white text-xl font-bold shrink-0" style={{ backgroundColor: "#F47920" }}>
+          <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-white text-xl font-bold shrink-0" style={{ backgroundColor: "#1A3072" }}>
             L
           </div>
           <div className="flex-1 min-w-0">
@@ -262,7 +436,7 @@ function DeliveryProfileTab({ onLogout, livreurId }: { onLogout?: () => void; li
 
       <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
         {[
-          { icon: History, label: "Historique des livraisons" },
+          { icon: Truck, label: "Historique des livraisons" },
           { icon: Settings, label: "Paramètres du compte" },
           { icon: Shield, label: "Confidentialité & données" },
           { icon: HelpCircle, label: "Aide & support" },
@@ -285,32 +459,51 @@ function DeliveryProfileTab({ onLogout, livreurId }: { onLogout?: () => void; li
   );
 }
 
-// ── Main component ────────────────────────────────────────────────────────────
+// ── Main component ──────────────────────────────────────────────────────────────
 
 export function DeliveryDashboard({ onLogout }: Props) {
   const [tab, setTab] = useState<DeliveryTab>("home");
   const livreurId = session.getUserId();
 
-  const [livraisons, setLivraisons] = useState<LivraisonAPI[]>([]);
+  const [mesCourses, setMesCourses] = useState<LivraisonAPI[]>([]);
+  const [disponibles, setDisponibles] = useState<LivraisonAPI[]>([]);
   const [loading, setLoading] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
 
   const load = () => {
     if (!livreurId) return;
     setLoading(true);
-    livraisonsApi.getByLivreur(livreurId)
-      .then(setLivraisons)
+    Promise.all([
+      livraisonsApi.getByLivreur(livreurId),
+      livraisonsApi.getEnAttente(),
+    ])
+      .then(([mes, dispo]) => {
+        setMesCourses(mes);
+        setDisponibles(dispo);
+      })
       .catch(() => {})
       .finally(() => setLoading(false));
   };
 
   useEffect(() => { load(); }, [livreurId]);
 
+  const handleSeProposer = async (id: string) => {
+    setActionError(null);
+    try {
+      const updated = await livraisonsApi.seProposer(id, livreurId);
+      setDisponibles((prev) => prev.filter((l) => l.id !== id));
+      setMesCourses((prev) => [updated, ...prev]);
+      setTab("mesCourses");
+    } catch (e) {
+      setActionError(e instanceof Error ? e.message : "Erreur");
+    }
+  };
+
   const handlePrendreEnCharge = async (id: string) => {
     setActionError(null);
     try {
       const updated = await livraisonsApi.prendreEnCharge(id, livreurId);
-      setLivraisons((prev) => prev.map((l) => l.id === updated.id ? updated : l));
+      setMesCourses((prev) => prev.map((l) => l.id === updated.id ? updated : l));
     } catch (e) {
       setActionError(e instanceof Error ? e.message : "Erreur");
     }
@@ -320,23 +513,23 @@ export function DeliveryDashboard({ onLogout }: Props) {
     setActionError(null);
     try {
       const updated = await livraisonsApi.confirmer(id, livreurId);
-      setLivraisons((prev) => prev.map((l) => l.id === updated.id ? updated : l));
+      setMesCourses((prev) => prev.map((l) => l.id === updated.id ? updated : l));
     } catch (e) {
       setActionError(e instanceof Error ? e.message : "Erreur");
     }
   };
 
-  const activeCount = livraisons.filter((l) => l.statut === "ASSIGNEE" || l.statut === "EN_COURS").length;
+  const activeCount = mesCourses.filter((l) => l.statut === "ASSIGNEE" || l.statut === "EN_COURS").length;
 
   return (
     <div className="flex-1 flex overflow-hidden" style={{ backgroundColor: "#F3F4F6" }}>
-      <DeliverySidebarNav tab={tab} activeCount={activeCount} onTab={setTab} onLogout={onLogout} />
+      <DeliverySidebarNav tab={tab} disponiblesCount={disponibles.length} activeCount={activeCount} onTab={setTab} onLogout={onLogout} />
 
       <div className="flex-1 flex flex-col overflow-hidden min-w-0">
         <header className="shrink-0 bg-white border-b border-gray-200 lg:hidden">
           <div className="px-4 py-3 flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-2xl flex items-center justify-center text-white" style={{ backgroundColor: "#F47920" }}>
+              <div className="w-9 h-9 rounded-2xl flex items-center justify-center text-white" style={{ backgroundColor: "#1A3072" }}>
                 <Package className="w-5 h-5" />
               </div>
               <div>
@@ -358,7 +551,8 @@ export function DeliveryDashboard({ onLogout }: Props) {
         <header className="hidden lg:flex shrink-0 bg-white border-b border-gray-200 items-center justify-between px-6 py-3">
           <h1 className="font-bold text-gray-900 text-lg">
             {tab === "home" && "Tableau de bord"}
-            {tab === "deliveries" && "Mes livraisons"}
+            {tab === "disponibles" && "Livraisons disponibles"}
+            {tab === "mesCourses" && "Mes courses"}
             {tab === "profile" && "Mon profil"}
           </h1>
           <div className="flex items-center gap-2">
@@ -372,10 +566,25 @@ export function DeliveryDashboard({ onLogout }: Props) {
         )}
 
         <div className="flex-1 overflow-y-auto">
-          {tab === "home" && <DeliveryHomeTab livraisons={livraisons} onGoDeliveries={() => setTab("deliveries")} />}
-          {tab === "deliveries" && (
-            <DeliveriesTab
-              livraisons={livraisons}
+          {tab === "home" && (
+            <DeliveryHomeTab
+              mesCourses={mesCourses}
+              disponibles={disponibles}
+              onGoDisponibles={() => setTab("disponibles")}
+              onGoMesCourses={() => setTab("mesCourses")}
+            />
+          )}
+          {tab === "disponibles" && (
+            <DisponiblesTab
+              disponibles={disponibles}
+              loading={loading}
+              onRefresh={load}
+              onSeProposer={handleSeProposer}
+            />
+          )}
+          {tab === "mesCourses" && (
+            <MesCoursesTab
+              livraisons={mesCourses}
               loading={loading}
               onRefresh={load}
               onPrendreEnCharge={handlePrendreEnCharge}
@@ -385,7 +594,7 @@ export function DeliveryDashboard({ onLogout }: Props) {
           {tab === "profile" && <DeliveryProfileTab onLogout={onLogout} livreurId={livreurId} />}
         </div>
 
-        <DeliveryNav tab={tab} activeCount={activeCount} onTab={setTab} />
+        <DeliveryNav tab={tab} disponiblesCount={disponibles.length} activeCount={activeCount} onTab={setTab} />
       </div>
     </div>
   );

@@ -233,6 +233,9 @@ export const livraisonsApi = {
   getEnAttente: () =>
     http<LivraisonAPI[]>(`/livraisons/en-attente`),
 
+  seProposer: (id: string, livreurId: string) =>
+    http<LivraisonAPI>(`/livraisons/${id}/assigner/${livreurId}`, { method: "PATCH" }),
+
   assignerAuto: (id: string) =>
     http<LivraisonAPI>(`/livraisons/${id}/assigner-auto`, { method: "PATCH" }),
 
