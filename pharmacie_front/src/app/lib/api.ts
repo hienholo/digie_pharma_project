@@ -297,6 +297,19 @@ export const rendezVousApi = {
     http<RendezVousAPI>(`/rendez-vous/${id}/annuler`, { method: "PATCH" }),
 };
 
+// ── Livreurs ──────────────────────────────────────────────────────────────────
+
+export const livreursApi = {
+  getById: (id: string) =>
+    http<import("./types").LivreurAPI>(`/livreurs/${id}`),
+
+  changerDisponibilite: (id: string, statut: "DISPONIBLE" | "HORS_LIGNE", latitude?: number, longitude?: number) =>
+    http<import("./types").LivreurAPI>(`/livreurs/${id}/disponibilite`, {
+      method: "PATCH",
+      body: JSON.stringify({ statut, latitude: latitude ?? null, longitude: longitude ?? null }),
+    }),
+};
+
 // ── Notifications ─────────────────────────────────────────────────────────────
 
 export const notificationsApi = {

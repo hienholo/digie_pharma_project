@@ -1,5 +1,18 @@
 // ── Types API LAHFIA (alignés sur le MCD backend réel) ───────────────────────
 
+export interface LivreurAPI {
+  id: string;
+  nom: string;
+  prenom: string;
+  email: string;
+  telephone: string;
+  statut: "EN_ATTENTE_VALIDATION" | "ACTIF" | "SUSPENDU";
+  disponibiliteStatut: "DISPONIBLE" | "EN_COURSE" | "HORS_LIGNE";
+  latitude?: number;
+  longitude?: number;
+  createdAt?: string;
+}
+
 export interface MedecinAPI {
   id: string;
   nom: string;

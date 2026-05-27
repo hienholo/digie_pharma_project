@@ -4,8 +4,8 @@ import {
   Home, User, Truck, ChevronRight, Settings, HelpCircle,
   Shield, Star, RefreshCw, Bell,
 } from "lucide-react";
-import { livraisonsApi, session } from "../lib/api";
-import type { LivraisonAPI } from "../lib/types";
+import { livraisonsApi, livreursApi, session } from "../lib/api";
+import type { LivraisonAPI, LivreurAPI } from "../lib/types";
 
 type DeliveryTab = "home" | "disponibles" | "mesCourses" | "profile";
 
@@ -415,23 +415,63 @@ function MesCoursesTab({
 
 // ── Profile tab ─────────────────────────────────────────────────────────────────
 
-function DeliveryProfileTab({ onLogout, livreurId }: { onLogout?: () => void; livreurId: string }) {
+function DeliveryProfileTab({
+  onLogout, livreur, toggling, onToggle,
+}: { onLogout?: () => void; livreur: LivreurAPI | null; toggling: boolean; onToggle: () => void }) {
   return (
     <div className="px-4 py-4 space-y-4 pb-6">
       <div className="bg-white rounded-2xl border border-gray-100 p-5">
         <div className="flex items-center gap-4">
           <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-white text-xl font-bold shrink-0" style={{ backgroundColor: "#1A3072" }}>
-            L
+            {livreur ? livreur.prenom.charAt(0).toUpperCase() : "L"}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="font-bold text-gray-900">Livreur LAHFIA</p>
-            <p className="text-xs text-gray-500 mt-0.5 truncate">ID : {livreurId.slice(-12)}</p>
+            <p className="font-bold text-gray-900">
+              {livreur ? `${livreur.prenom} ${livreur.nom}` : "Livreur LAHFIA"}
+            </p>
+            <p className="text-xs text-gray-500 mt-0.5 truncate">{livreur?.telephone ?? ""}</p>
             <div className="flex items-center gap-1 mt-1">
               <Star className="w-3 h-3 text-yellow-400" fill="#FBBF24" />
               <span className="text-xs text-gray-600">Espace livreur</span>
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Toggle disponibilité */}
+      <div className="bg-white rounded-2xl border border-gray-100 p-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm font-semibold text-gray-900">Ma disponibilité</p>
+            <p className="text-xs text-gray-400 mt-0.5">
+              {livreur?.disponibiliteStatut === "EN_COURSE"
+                ? "Impossible de changer pendant une course"
+                : "Activez pour recevoir des livraisons"}
+            </p>
+          </div>
+          <button
+            onClick={onToggle}
+            disabled={toggling || livreur?.disponibiliteStatut === "EN_COURSE"}
+            className="relative w-12 h-6 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            style={{
+              backgroundColor: livreur?.disponibiliteStatut === "DISPONIBLE" ? "#10B981"
+                : livreur?.disponibiliteStatut === "EN_COURSE" ? "#F47920" : "#D1D5DB",
+            }}
+          >
+            <span
+              className="absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-all"
+              style={{ left: livreur?.disponibiliteStatut === "DISPONIBLE" || livreur?.disponibiliteStatut === "EN_COURSE" ? "calc(100% - 22px)" : "2px" }}
+            />
+          </button>
+        </div>
+        <p className="text-xs font-medium mt-2" style={{
+          color: livreur?.disponibiliteStatut === "DISPONIBLE" ? "#10B981"
+            : livreur?.disponibiliteStatut === "EN_COURSE" ? "#F47920" : "#9CA3AF",
+        }}>
+          {livreur?.disponibiliteStatut === "DISPONIBLE" ? "● Disponible"
+            : livreur?.disponibiliteStatut === "EN_COURSE" ? "● En course"
+            : "● Hors ligne"}
+        </p>
       </div>
 
       <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
@@ -459,25 +499,62 @@ function DeliveryProfileTab({ onLogout, livreurId }: { onLogout?: () => void; li
   );
 }
 
+// ── Disponibilité toggle ────────────────────────────────────────────────────────
+
+function DisponibiliteToggle({
+  statut, loading, onToggle,
+}: { statut?: LivreurAPI["disponibiliteStatut"]; loading: boolean; onToggle: () => void }) {
+  if (!statut) return null;
+
+  const isEnCourse = statut === "EN_COURSE";
+  const isDisponible = statut === "DISPONIBLE";
+
+  const dotColor = isEnCourse ? "#F47920" : isDisponible ? "#10B981" : "#9CA3AF";
+  const label = isEnCourse ? "En course" : isDisponible ? "Disponible" : "Hors ligne";
+
+  return (
+    <button
+      onClick={onToggle}
+      disabled={loading || isEnCourse}
+      className="flex items-center gap-1.5 group disabled:cursor-default"
+      title={isEnCourse ? "Impossible de changer pendant une course" : `Passer ${isDisponible ? "hors ligne" : "disponible"}`}
+    >
+      <div className="w-2 h-2 rounded-full transition-colors" style={{ backgroundColor: dotColor }} />
+      <span className="text-xs font-medium transition-colors" style={{ color: dotColor }}>
+        {loading ? "…" : label}
+      </span>
+      {!isEnCourse && (
+        <span className="text-[10px] text-gray-400 group-hover:text-gray-600 transition-colors">
+          {isDisponible ? "→ Hors ligne" : "→ Disponible"}
+        </span>
+      )}
+    </button>
+  );
+}
+
 // ── Main component ──────────────────────────────────────────────────────────────
 
 export function DeliveryDashboard({ onLogout }: Props) {
   const [tab, setTab] = useState<DeliveryTab>("home");
   const livreurId = session.getUserId();
 
+  const [livreur, setLivreur] = useState<LivreurAPI | null>(null);
   const [mesCourses, setMesCourses] = useState<LivraisonAPI[]>([]);
   const [disponibles, setDisponibles] = useState<LivraisonAPI[]>([]);
   const [loading, setLoading] = useState(false);
+  const [toggling, setToggling] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
 
   const load = () => {
     if (!livreurId) return;
     setLoading(true);
     Promise.all([
+      livreursApi.getById(livreurId),
       livraisonsApi.getByLivreur(livreurId),
       livraisonsApi.getEnAttente(),
     ])
-      .then(([mes, dispo]) => {
+      .then(([lv, mes, dispo]) => {
+        setLivreur(lv);
         setMesCourses(mes);
         setDisponibles(dispo);
       })
@@ -486,6 +563,21 @@ export function DeliveryDashboard({ onLogout }: Props) {
   };
 
   useEffect(() => { load(); }, [livreurId]);
+
+  const handleToggleDisponibilite = async () => {
+    if (!livreur || toggling) return;
+    if (livreur.disponibiliteStatut === "EN_COURSE") return;
+    const next = livreur.disponibiliteStatut === "DISPONIBLE" ? "HORS_LIGNE" : "DISPONIBLE";
+    setToggling(true);
+    try {
+      const updated = await livreursApi.changerDisponibilite(livreurId, next);
+      setLivreur(updated);
+    } catch (e) {
+      setActionError(e instanceof Error ? e.message : "Erreur");
+    } finally {
+      setToggling(false);
+    }
+  };
 
   const handleSeProposer = async (id: string) => {
     setActionError(null);
@@ -533,11 +625,10 @@ export function DeliveryDashboard({ onLogout }: Props) {
                 <Package className="w-5 h-5" />
               </div>
               <div>
-                <p className="font-semibold text-gray-900 text-sm">Espace Livreur</p>
-                <div className="flex items-center gap-1.5">
-                  <div className="w-1.5 h-1.5 rounded-full bg-green-400" />
-                  <span className="text-xs text-green-600">Disponible</span>
-                </div>
+                <p className="font-semibold text-gray-900 text-sm">
+                  {livreur ? `${livreur.prenom} ${livreur.nom}` : "Espace Livreur"}
+                </p>
+                <DisponibiliteToggle statut={livreur?.disponibiliteStatut} loading={toggling} onToggle={handleToggleDisponibilite} />
               </div>
             </div>
             {onLogout && (
@@ -555,10 +646,7 @@ export function DeliveryDashboard({ onLogout }: Props) {
             {tab === "mesCourses" && "Mes courses"}
             {tab === "profile" && "Mon profil"}
           </h1>
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-green-400" />
-            <span className="text-sm text-gray-500">Disponible</span>
-          </div>
+          <DisponibiliteToggle statut={livreur?.disponibiliteStatut} loading={toggling} onToggle={handleToggleDisponibilite} />
         </header>
 
         {actionError && (
@@ -591,7 +679,7 @@ export function DeliveryDashboard({ onLogout }: Props) {
               onConfirmer={handleConfirmer}
             />
           )}
-          {tab === "profile" && <DeliveryProfileTab onLogout={onLogout} livreurId={livreurId} />}
+          {tab === "profile" && <DeliveryProfileTab onLogout={onLogout} livreur={livreur} toggling={toggling} onToggle={handleToggleDisponibilite} />}
         </div>
 
         <DeliveryNav tab={tab} disponiblesCount={disponibles.length} activeCount={activeCount} onTab={setTab} />
