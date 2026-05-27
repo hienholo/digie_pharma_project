@@ -1,7 +1,7 @@
-import { useState, useMemo, useEffect, useCallback } from "react";
+import { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import {
   pharmaciesApi, ordonnancesApi, demandesApi, commandesApi,
-  notificationsApi, patientsApi,
+  notificationsApi, patientsApi, livraisonsApi,
 } from "../lib/api";
 import type { PharmacieAPI, NotificationAPI, CommandeAPI, PatientAPI, DemandeAPI, OrdonnanceAPI } from "../lib/types";
 import { ocrMock, DRUG_PRICE } from "../datamock/ocr.mock";
@@ -1938,6 +1938,7 @@ export function PatientSpace({ onLogout, userId }: Props) {
   const [selectedPharmacy, setSelectedPharmacy] = useState<Pharmacy | null>(null);
   const [mode, setMode] = useState<"pickup" | "delivery" | null>(null);
   const [orderStep, setOrderStep] = useState<OrderStep | null>(null);
+  const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [notifications, setNotifications] = useState<Notif[]>([]);
   const [pharmaciesApi_, setPharmaciesApi] = useState<PharmacieAPI[]>([]);
   const [commande, setCommande] = useState<CommandeAPI | null>(null);
@@ -2115,47 +2116,89 @@ export function PatientSpace({ onLogout, userId }: Props) {
   const handlePay = async (method: "cash" | "card" = paymentMethod) => {
     setOrderStep("confirmed");
     setStep("tracking");
+
+    let commandeId: string | null = null;
+    let isDelivery = mode === "delivery";
+
     if (userId && selectedPharmacy) {
       try {
         let dId = demandeId;
         if (!dId) {
-          const d = await demandesApi.create({
-            patientId: userId,
-            type: "MEDICAMENT",
-          });
+          const d = await demandesApi.create({ patientId: userId, type: "MEDICAMENT" });
           dId = d.id;
           setDemandeId(dId);
         }
         const c = await commandesApi.create({
           demandeId: dId,
           pharmacieId: selectedPharmacy.id,
-          modeObtention: mode === "delivery" ? "LIVRAISON" : "RETRAIT",
+          modeObtention: isDelivery ? "LIVRAISON" : "RETRAIT",
           modePaiement: method === "card" ? "EN_LIGNE" : "A_LA_LIVRAISON",
           medicamentIds: [],
         });
         setCommande(c);
-        const pharmacyName = selectedPharmacy.name;
-        setCommandePharmacyMap((prev) => ({ ...prev, [dId!]: pharmacyName }));
+        commandeId = c.id;
+        setCommandePharmacyMap((prev) => ({ ...prev, [dId!]: selectedPharmacy.name }));
         demandesApi.getByPatient(userId).then(setApiDemandes).catch(() => {});
-      } catch { /* on continue le tracking mock en cas d'erreur */ }
+      } catch { /* commande échouée, on reste en "confirmed" */ }
     }
-    setTimeout(() => setOrderStep("preparing"), 1200);
-    setTimeout(() => setOrderStep("ready"), 3000);
-    if (mode === "delivery") {
-      setTimeout(() => setOrderStep("delivering"), 4500);
-      setTimeout(() => setOrderStep("done"), 6500);
-    } else {
-      setTimeout(() => setOrderStep("done"), 4500);
+
+    setOrderStep("preparing");
+
+    // Polling réel si livraison, sinon simple progression commande
+    if (commandeId && isDelivery) {
+      const mapStatut = (statut: string): OrderStep => {
+        if (statut === "EN_ATTENTE_LIVREUR") return "preparing";
+        if (statut === "ASSIGNEE")           return "ready";
+        if (statut === "EN_COURS")           return "delivering";
+        if (statut === "LIVREE")             return "done";
+        return "preparing";
+      };
+      const cId = commandeId;
+      const poll = () => {
+        livraisonsApi.getByCommande(cId)
+          .then((l) => {
+            setOrderStep(mapStatut(l.statut));
+            if (l.statut === "LIVREE" || l.statut === "ECHEC") {
+              if (pollingRef.current) clearInterval(pollingRef.current);
+            }
+          })
+          .catch(() => {});
+      };
+      poll();
+      pollingRef.current = setInterval(poll, 12000);
+    } else if (!isDelivery && commandeId) {
+      // Retrait : poll le statut commande
+      const cId = commandeId;
+      const mapCommandeStatut = (statut: string): OrderStep => {
+        if (statut === "EN_PREPARATION") return "preparing";
+        if (statut === "PRETE")          return "ready";
+        if (statut === "TERMINEE")       return "done";
+        return "preparing";
+      };
+      const poll = () => {
+        commandesApi.getById(cId)
+          .then((c) => {
+            setOrderStep(mapCommandeStatut(c.statut));
+            if (c.statut === "TERMINEE" || c.statut === "ANNULEE") {
+              if (pollingRef.current) clearInterval(pollingRef.current);
+            }
+          })
+          .catch(() => {});
+      };
+      poll();
+      pollingRef.current = setInterval(poll, 12000);
     }
   };
 
   const handleNewOrder = () => {
+    if (pollingRef.current) { clearInterval(pollingRef.current); pollingRef.current = null; }
     setStep("search");
     setQuery("");
     setItems([]);
     setSelectedPharmacy(null);
     setMode(null);
     setOrderStep(null);
+    setCommande(null);
     setTab("search");
   };
 

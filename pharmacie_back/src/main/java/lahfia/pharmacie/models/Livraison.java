@@ -65,4 +65,13 @@ public class Livraison {
 
     @JsonProperty("livreurId")
     public UUID getLivreurId() { return livreur != null ? livreur.getId() : null; }
+
+    @JsonProperty("livreurNom")
+    public String getLivreurNom() { return livreur != null ? livreur.getNom() : null; }
+
+    @JsonProperty("livreurPrenom")
+    public String getLivreurPrenom() { return livreur != null ? livreur.getPrenom() : null; }
+
+    @JsonProperty("livreurTelephone")
+    public String getLivreurTelephone() { return livreur != null ? livreur.getTelephone() : null; }
 }

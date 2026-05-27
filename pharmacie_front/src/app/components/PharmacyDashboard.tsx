@@ -1,14 +1,15 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { RequestList } from "./RequestList";
 import { InventoryPanel } from "./InventoryPanel";
 import {
   Package, Inbox, BarChart3, LogOut, Home, User,
   MapPin, Star, ChevronRight, Settings, HelpCircle, Shield, Phone, Bell,
+  Truck, CheckCircle, Clock, AlertCircle,
 } from "lucide-react";
 import {
-  pharmaciesApi, demandesApi, commandesApi, medicamentsApi, notificationsApi, session,
+  pharmaciesApi, demandesApi, commandesApi, medicamentsApi, notificationsApi, livraisonsApi, session,
 } from "../lib/api";
-import type { PharmacieAPI, DemandeEnAttenteAPI, CommandePharmacieAPI, MedicamentAPI } from "../lib/types";
+import type { PharmacieAPI, DemandeEnAttenteAPI, CommandePharmacieAPI, MedicamentAPI, LivraisonAPI } from "../lib/types";
 
 // Re-export des types pour les sous-composants
 export type { DemandeEnAttenteAPI as Request } from "../lib/types";
@@ -233,11 +234,105 @@ function PharmacyHomeTab({
 
 // ── Commandes tab ─────────────────────────────────────────────────────────────
 
+// Barre de progression livraison pour la pharmacie
+function LivraisonProgress({ livraison }: { livraison: LivraisonAPI }) {
+  const steps: { statut: LivraisonAPI["statut"]; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
+    { statut: "EN_ATTENTE_LIVREUR", label: "En attente", icon: Clock },
+    { statut: "ASSIGNEE",           label: "Livreur assigné", icon: Truck },
+    { statut: "EN_COURS",           label: "En cours", icon: Truck },
+    { statut: "LIVREE",             label: "Livrée", icon: CheckCircle },
+  ];
+  const order: LivraisonAPI["statut"][] = ["EN_ATTENTE_LIVREUR", "ASSIGNEE", "EN_COURS", "LIVREE"];
+  const currentIdx = order.indexOf(livraison.statut);
+
+  if (livraison.statut === "ECHEC") {
+    return (
+      <div className="flex items-center gap-2 mt-2 px-3 py-2 rounded-xl bg-red-50">
+        <AlertCircle className="w-4 h-4 text-red-500 shrink-0" />
+        <p className="text-xs text-red-600 font-medium">Livraison échouée</p>
+        {livraison.livreurPrenom && <p className="text-xs text-red-400">— {livraison.livreurPrenom} {livraison.livreurNom}</p>}
+      </div>
+    );
+  }
+
+  return (
+    <div className="mt-3 p-3 rounded-xl border" style={{ backgroundColor: "#EEF1F8", borderColor: "#D6DCF0" }}>
+      {/* Livreur assigné */}
+      {livraison.livreurPrenom && (
+        <div className="flex items-center gap-2 mb-2">
+          <div className="w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0" style={{ backgroundColor: "#1A3072" }}>
+            {livraison.livreurPrenom.charAt(0)}
+          </div>
+          <p className="text-xs font-medium text-gray-800">{livraison.livreurPrenom} {livraison.livreurNom}</p>
+          {livraison.livreurTelephone && (
+            <a href={`tel:${livraison.livreurTelephone}`} className="text-xs ml-auto" style={{ color: "#1A3072" }}>
+              {livraison.livreurTelephone}
+            </a>
+          )}
+        </div>
+      )}
+      {/* Steps */}
+      <div className="flex items-center gap-1">
+        {steps.map((s, i) => {
+          const done = i <= currentIdx;
+          const Icon = s.icon;
+          return (
+            <div key={s.statut} className="flex items-center gap-1 flex-1 min-w-0">
+              <div className="flex flex-col items-center gap-1 flex-1">
+                <div className="w-6 h-6 rounded-full flex items-center justify-center shrink-0"
+                  style={{ backgroundColor: done ? "#1A3072" : "#E5E7EB" }}>
+                  <Icon className="w-3 h-3" style={{ color: done ? "white" : "#9CA3AF" }} />
+                </div>
+                <span className="text-[9px] text-center leading-tight" style={{ color: done ? "#1A3072" : "#9CA3AF" }}>
+                  {s.label}
+                </span>
+              </div>
+              {i < steps.length - 1 && (
+                <div className="h-0.5 w-4 shrink-0 mb-4 rounded" style={{ backgroundColor: i < currentIdx ? "#1A3072" : "#E5E7EB" }} />
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function CommandesTab({ commandes, onMarquerPrete, onTerminer }: {
   commandes: CommandePharmacieAPI[];
   onMarquerPrete: (id: string) => void;
   onTerminer: (id: string) => void;
 }) {
+  const [livraisons, setLivraisons] = useState<Record<string, LivraisonAPI>>({});
+
+  // Charger les livraisons pour les commandes LIVRAISON
+  useEffect(() => {
+    const livraisonCommandes = commandes.filter((c) => c.modeObtention === "LIVRAISON");
+    livraisonCommandes.forEach((c) => {
+      livraisonsApi.getByCommande(c.id)
+        .then((l) => setLivraisons((prev) => ({ ...prev, [c.id]: l })))
+        .catch(() => {});
+    });
+  }, [commandes]);
+
+  // Polling toutes les 15s pour les livraisons actives
+  useEffect(() => {
+    const actives = commandes.filter((c) => c.modeObtention === "LIVRAISON" &&
+      c.statut !== "TERMINEE" && c.statut !== "ANNULEE");
+    if (actives.length === 0) return;
+    const interval = setInterval(() => {
+      actives.forEach((c) => {
+        livraisonsApi.getByCommande(c.id)
+          .then((l) => setLivraisons((prev) => ({ ...prev, [c.id]: l })))
+          .catch(() => {});
+      });
+    }, 15000);
+    return () => clearInterval(interval);
+  }, [commandes]);
+
+  // Badge : livreurs qui se sont proposés (ASSIGNEE) depuis la dernière fois
+  const newlyAssigned = Object.values(livraisons).filter((l) => l.statut === "ASSIGNEE");
+
   if (commandes.length === 0) {
     return (
       <div className="px-4 py-8 text-center">
@@ -246,42 +341,65 @@ function CommandesTab({ commandes, onMarquerPrete, onTerminer }: {
       </div>
     );
   }
+
   return (
     <div className="px-4 py-4 space-y-3">
-      {commandes.map((c) => (
-        <div key={c.id} className="bg-white rounded-2xl border border-gray-200 p-4">
-          <div className="flex items-start justify-between mb-2">
-            <div>
-              <p className="font-medium text-gray-900">{c.patientPrenom} {c.patientNom}</p>
-              <p className="text-xs text-gray-500 mt-0.5">
-                {new Date(c.createdAt).toLocaleDateString("fr-FR")} · {c.modeObtention === "LIVRAISON" ? "Livraison" : "Retrait"}
-              </p>
-            </div>
-            <span className="text-xs px-2 py-1 rounded-full font-medium"
-              style={{ backgroundColor: statutColor[c.statut] + "20", color: statutColor[c.statut] }}>
-              {statutLabel[c.statut]}
-            </span>
-          </div>
-          {c.medicamentNoms.length > 0 && (
-            <p className="text-sm text-gray-600 mb-3">
-              <span className="font-medium">Médicaments :</span> {c.medicamentNoms.join(", ")}
-            </p>
-          )}
-          {c.statut === "EN_PREPARATION" && (
-            <button onClick={() => onMarquerPrete(c.id)}
-              className="w-full py-2 rounded-xl text-white text-sm font-medium"
-              style={{ backgroundColor: GREEN }}>
-              Marquer comme prête
-            </button>
-          )}
-          {c.statut === "PRETE" && c.modeObtention === "RETRAIT" && (
-            <button onClick={() => onTerminer(c.id)}
-              className="w-full py-2 rounded-xl text-white text-sm font-medium bg-gray-500">
-              Confirmer le retrait
-            </button>
-          )}
+      {/* Alerte : livreur(s) proposé(s) */}
+      {newlyAssigned.length > 0 && (
+        <div className="flex items-center gap-3 px-4 py-3 rounded-2xl border" style={{ backgroundColor: "#EEF1F8", borderColor: "#D6DCF0" }}>
+          <Truck className="w-5 h-5 shrink-0" style={{ color: "#1A3072" }} />
+          <p className="text-sm font-medium" style={{ color: "#1A3072" }}>
+            {newlyAssigned.length} livreur{newlyAssigned.length > 1 ? "s" : ""} assigné{newlyAssigned.length > 1 ? "s" : ""}
+            {newlyAssigned[0].livreurPrenom ? ` — ${newlyAssigned[0].livreurPrenom} ${newlyAssigned[0].livreurNom ?? ""}` : ""}
+          </p>
         </div>
-      ))}
+      )}
+
+      {commandes.map((c) => {
+        const liv = livraisons[c.id];
+        return (
+          <div key={c.id} className="bg-white rounded-2xl border border-gray-200 p-4">
+            <div className="flex items-start justify-between mb-2">
+              <div>
+                <p className="font-medium text-gray-900">{c.patientPrenom} {c.patientNom}</p>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  {new Date(c.createdAt).toLocaleDateString("fr-FR")} · {c.modeObtention === "LIVRAISON" ? "🚚 Livraison" : "🏪 Retrait"}
+                </p>
+              </div>
+              <span className="text-xs px-2 py-1 rounded-full font-medium"
+                style={{ backgroundColor: statutColor[c.statut] + "20", color: statutColor[c.statut] }}>
+                {statutLabel[c.statut]}
+              </span>
+            </div>
+
+            {c.medicamentNoms.length > 0 && (
+              <p className="text-sm text-gray-600 mb-2">
+                <span className="font-medium">Médicaments :</span> {c.medicamentNoms.join(", ")}
+              </p>
+            )}
+
+            {/* Progression livraison */}
+            {c.modeObtention === "LIVRAISON" && liv && <LivraisonProgress livraison={liv} />}
+
+            {/* Actions */}
+            <div className="mt-3 space-y-2">
+              {c.statut === "EN_PREPARATION" && (
+                <button onClick={() => onMarquerPrete(c.id)}
+                  className="w-full py-2 rounded-xl text-white text-sm font-medium"
+                  style={{ backgroundColor: GREEN }}>
+                  Marquer comme prête
+                </button>
+              )}
+              {c.statut === "PRETE" && c.modeObtention === "RETRAIT" && (
+                <button onClick={() => onTerminer(c.id)}
+                  className="w-full py-2 rounded-xl text-white text-sm font-medium bg-gray-500">
+                  Confirmer le retrait
+                </button>
+              )}
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }

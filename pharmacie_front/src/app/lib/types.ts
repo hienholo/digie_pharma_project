@@ -180,6 +180,9 @@ export interface LivraisonAPI {
   id: string;
   commandeId?: string;
   livreurId?: string;
+  livreurNom?: string;
+  livreurPrenom?: string;
+  livreurTelephone?: string;
   statut: "EN_ATTENTE_LIVREUR" | "ASSIGNEE" | "EN_COURS" | "LIVREE" | "ECHEC";
   adresseLivraison?: string;
   livreurLatitude?: number;
