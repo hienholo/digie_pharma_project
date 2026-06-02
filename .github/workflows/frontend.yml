@@ -25,14 +25,12 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Set up Node.js ${{ env.NODE_VERSION }}
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
+          cache: npm
           cache-dependency-path: pharmacie_front/package-lock.json
 
       - name: Install dependencies
@@ -45,13 +43,6 @@ jobs:
         env:
           VITE_API_BASE_URL: /api/v1
 
-      - name: Upload build artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: frontend-dist
-          path: pharmacie_front/dist/
-          retention-days: 1
-
   # ───────────────────────────────────────────
   # 2. DOCKER BUILD & PUSH → GHCR
   # ───────────────────────────────────────────
@@ -63,21 +54,17 @@ jobs:
     permissions:
       contents: read
       packages: write
-      actions: write
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Log in to GitHub Container Registry
-        uses: docker/login-action@v3
+      - uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Extract Docker metadata
-        id: meta
+      - id: meta
         uses: docker/metadata-action@v5
         with:
           images: ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}
@@ -85,16 +72,13 @@ jobs:
             type=sha,prefix=,suffix=,format=short
             type=raw,value=latest
 
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v5
+      - uses: docker/build-push-action@v5
         with:
           context: ./pharmacie_front
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           build-args: VITE_API_BASE_URL=/api/v1
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
 
   # ───────────────────────────────────────────
   # 3. DÉPLOIEMENT SUR VPS
@@ -115,11 +99,9 @@ jobs:
           key: ${{ secrets.VPS_SSH_KEY }}
           port: ${{ secrets.VPS_PORT }}
           script: |
-            echo "── Pulling latest image ──"
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
             docker pull ghcr.io/${{ github.repository_owner }}/frontend:latest
 
-            echo "── Restarting container ──"
             docker stop frontend || true
             docker rm   frontend || true
             docker run -d \
@@ -128,7 +110,6 @@ jobs:
               -p 3000:80 \
               ghcr.io/${{ github.repository_owner }}/frontend:latest
 
-            echo "── Cleanup old images ──"
             docker image prune -f
 
       - name: Health check
