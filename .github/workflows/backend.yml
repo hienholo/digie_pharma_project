@@ -120,7 +120,7 @@ jobs:
               --restart unless-stopped \
               -p 8080:8080 \
               -e SERVER_PORT=8080 \
-              --env-file /opt/lahfia/.env \
+              --env-file /opt/app/.env \
               ghcr.io/${{ github.repository_owner }}/backend:latest
 
             echo "── Cleanup old images ──"
