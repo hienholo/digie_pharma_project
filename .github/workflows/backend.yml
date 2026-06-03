@@ -95,7 +95,7 @@ jobs:
           docker run -d \
             --name backend \
             --restart unless-stopped \
-            -p 8080:8080 \
+            --network host \
             -e SERVER_PORT=8080 \
             --env-file /opt/app/.env \
             ghcr.io/hienholo/backend:latest
