@@ -51,9 +51,11 @@ public class WebSecurityConfig {
         public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(Arrays.asList(
+        "https://digie-pharma.com",
+        "http://digie-pharma.com",
         "http://localhost:5173",
         "http://localhost:3000"
-        )); // ports Vite/React courants
+        ));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("*"));
         configuration.setAllowCredentials(true);
