@@ -10,6 +10,7 @@ on:
     branches: [develop]
     paths:
       - 'pharmacie_back/**'
+  workflow_dispatch:
 
 env:
   JAVA_VERSION: '21'
