@@ -81,58 +81,39 @@ jobs:
           build-args: VITE_API_BASE_URL=/api/v1
 
   # ───────────────────────────────────────────
-  # 3. DÉPLOIEMENT SUR VPS
+  # 3. DÉPLOIEMENT — self-hosted runner (VPS)
   # ───────────────────────────────────────────
   deploy:
-    name: Deploy to VPS
-    runs-on: ubuntu-latest
+    name: Deploy
+    runs-on: self-hosted
     needs: docker
     if: github.event_name == 'push'
-    environment: production
 
     steps:
-      - name: Deploy via SSH
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.VPS_SSH_KEY }}
-          port: ${{ secrets.VPS_PORT }}
-          script_stop: true
-          script: |
-            echo "── Login GHCR ──"
-            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+      - name: Login GHCR
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
-            echo "── Pull image ──"
-            docker pull ghcr.io/hienholo/frontend:latest
-
-            echo "── Restart container ──"
-            docker stop frontend || true
-            docker rm   frontend || true
-            docker run -d \
-              --name frontend \
-              --restart unless-stopped \
-              -p 3000:80 \
-              ghcr.io/hienholo/frontend:latest
-
-            echo "── Cleanup ──"
-            docker image prune -f
+      - name: Pull & restart frontend
+        run: |
+          docker pull ghcr.io/hienholo/frontend:latest
+          docker stop frontend || true
+          docker rm   frontend || true
+          docker run -d \
+            --name frontend \
+            --restart unless-stopped \
+            -p 3000:80 \
+            ghcr.io/hienholo/frontend:latest
+          docker image prune -f
 
       - name: Health check
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.VPS_SSH_KEY }}
-          port: ${{ secrets.VPS_PORT }}
-          script: |
-            for i in $(seq 1 10); do
-              if curl -sf http://localhost:3000; then
-                echo "✅ Frontend is up!"
-                exit 0
-              fi
-              echo "Attempt $i/10 — retrying in 5s..."
-              sleep 5
-            done
-            echo "❌ Health check failed"
-            exit 1
+        run: |
+          for i in $(seq 1 10); do
+            if curl -sf http://localhost:3000; then
+              echo "✅ Frontend is up!"
+              exit 0
+            fi
+            echo "Attempt $i/10 — retrying in 5s..."
+            sleep 5
+          done
+          echo "❌ Health check failed"
+          exit 1
