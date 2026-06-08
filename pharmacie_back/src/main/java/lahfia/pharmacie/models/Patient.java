@@ -56,11 +56,31 @@ public class Patient {
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
+    // ── Mesures de santé (saisies manuellement par le patient) ───────────────
+    @Column(name = "rythme_cardiaque")
+    private Integer rythmeCardiaque;
+
+    @Column(name = "tension_systolique")
+    private Integer tensionSystolique;
+
+    @Column(name = "tension_diastolique")
+    private Integer tensionDiastolique;
+
+    @Column(name = "poids")
+    private Double poids;
+
+    @Column(name = "glycemie")
+    private Double glycemie;
+
     @JsonManagedReference("patient-ordonnances")
     @OneToMany(mappedBy = "patient", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Ordonnance> ordonnances;
- 
+
     @JsonManagedReference("patient-demandes")
     @OneToMany(mappedBy = "patient", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Demande> demandes;
+
+    @JsonManagedReference("patient-rappels")
+    @OneToMany(mappedBy = "patient", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<RappelMedicament> rappels;
 }

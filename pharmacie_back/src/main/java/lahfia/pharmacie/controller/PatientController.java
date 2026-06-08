@@ -48,4 +48,11 @@ public class PatientController {
                 patientService.mettreAJourLocalisation(id, body.get("latitude"), body.get("longitude"))
         );
     }
+
+    @PatchMapping("/{id}/mesures")
+    public ResponseEntity<Patient> mettreAJourMesures(
+            @PathVariable UUID id,
+            @RequestBody Map<String, Object> body) {
+        return ResponseEntity.ok(patientService.mettreAJourMesures(id, body));
+    }
 }

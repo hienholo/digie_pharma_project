@@ -6,7 +6,7 @@ import type {
   MedecinAPI, OrdonnanceNumeriqueAPI, RendezVousAPI,
   DemandeAPI, DemandeReponseAPI, DemandeEnAttenteAPI,
   CommandeAPI, CommandePharmacieAPI, LivraisonAPI, NotificationAPI,
-  LoginResponse,
+  LoginResponse, RappelAPI,
 } from "./types";
 
 const BASE = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:3000/api/v1";
@@ -72,6 +72,18 @@ export const patientsApi = {
     http<void>(`/patients/${id}/localisation`, {
       method: "PATCH",
       body: JSON.stringify({ latitude: lat, longitude: lng }),
+    }),
+
+  updateMesures: (id: string, mesures: {
+    rythmeCardiaque?: number;
+    tensionSystolique?: number;
+    tensionDiastolique?: number;
+    poids?: number;
+    glycemie?: number;
+  }) =>
+    http<PatientAPI>(`/patients/${id}/mesures`, {
+      method: "PATCH",
+      body: JSON.stringify(mesures),
     }),
 };
 
@@ -315,6 +327,38 @@ export const livreursApi = {
       method: "PATCH",
       body: JSON.stringify({ statut, latitude: latitude ?? null, longitude: longitude ?? null }),
     }),
+};
+
+// ── Rappels médicaments ───────────────────────────────────────────────────────
+
+export const rappelsApi = {
+  getJour: (patientId: string) =>
+    http<RappelAPI[]>(`/rappels/patient/${patientId}/jour`),
+
+  getAll: (patientId: string) =>
+    http<RappelAPI[]>(`/rappels/patient/${patientId}`),
+
+  creer: (payload: {
+    patientId: string;
+    medicamentNom: string;
+    dose?: string;
+    heure: string;
+    recurrent?: boolean;
+    dateRappel?: string;
+  }) =>
+    http<RappelAPI>("/rappels", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
+
+  marquerPris: (id: string) =>
+    http<RappelAPI>(`/rappels/${id}/marquer-pris`, { method: "PATCH" }),
+
+  annulerPris: (id: string) =>
+    http<RappelAPI>(`/rappels/${id}/annuler-pris`, { method: "PATCH" }),
+
+  supprimer: (id: string) =>
+    http<void>(`/rappels/${id}`, { method: "DELETE" }),
 };
 
 // ── Notifications ─────────────────────────────────────────────────────────────

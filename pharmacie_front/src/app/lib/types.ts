@@ -91,6 +91,22 @@ export interface PatientAPI {
   latitude?: number;
   longitude?: number;
   createdAt?: string;
+  rythmeCardiaque?: number;
+  tensionSystolique?: number;
+  tensionDiastolique?: number;
+  poids?: number;
+  glycemie?: number;
+}
+
+export interface RappelAPI {
+  id: string;
+  patientId: string;
+  medicamentNom: string;
+  dose?: string;
+  heure: string;
+  recurrent: boolean;
+  dateRappel?: string;
+  pris: boolean;
 }
 
 export interface PharmacieAPI {

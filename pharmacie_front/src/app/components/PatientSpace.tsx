@@ -1,11 +1,10 @@
 import { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import {
   pharmaciesApi, ordonnancesApi, demandesApi, commandesApi,
-  notificationsApi, patientsApi, livraisonsApi,
+  notificationsApi, patientsApi, livraisonsApi, rappelsApi,
 } from "../lib/api";
-import type { PharmacieAPI, NotificationAPI, CommandeAPI, PatientAPI, DemandeAPI, DemandeReponseAPI, OrdonnanceAPI } from "../lib/types";
+import type { PharmacieAPI, NotificationAPI, CommandeAPI, PatientAPI, DemandeAPI, DemandeReponseAPI, OrdonnanceAPI, RappelAPI } from "../lib/types";
 import { ocrMock } from "../datamock/ocr.mock";
-import { mockVitals, mockReminders } from "../datamock/health.mock";
 import type { Notif } from "../datamock/notifications.mock";
 import {
   Search,
@@ -14,6 +13,8 @@ import {
   Plus,
   Activity,
   Heart,
+  Scale,
+  Droplets,
   Smartphone,
   Package,
   Truck,
@@ -1578,12 +1579,92 @@ function HomeTab({
 
 // ── Suivi (dashboard) tab ─────────────────────────────────────────────────────
 
-function SuiviTab({ orders, prescriptions, patientName, onOrderFromOrdonnance }: {
+function SuiviTab({ orders, prescriptions, patientName, patientData, rappels, onOrderFromOrdonnance, onToggleRappel, onAddRappel, onDeleteRappel, onUpdateMesures }: {
   orders: OrderDisplay[];
   prescriptions: PrescriptionDisplay[];
   patientName: string;
+  patientData: PatientAPI | null;
+  rappels: RappelAPI[];
   onOrderFromOrdonnance?: (drugs: string[], ordonnanceId: string) => void;
+  onToggleRappel: (r: RappelAPI) => void;
+  onAddRappel: (medicamentNom: string, dose: string, heure: string) => void;
+  onDeleteRappel: (id: string) => void;
+  onUpdateMesures: (m: { rythmeCardiaque?: number; tensionSystolique?: number; tensionDiastolique?: number; poids?: number; glycemie?: number }) => Promise<void>;
 }) {
+  const [editMesures, setEditMesures] = useState(false);
+  const [mRC, setMRC] = useState("");
+  const [mSys, setMSys] = useState("");
+  const [mDia, setMDia] = useState("");
+  const [mPoids, setMPoids] = useState("");
+  const [mGly, setMGly] = useState("");
+  const [showAddRappel, setShowAddRappel] = useState(false);
+  const [newMed, setNewMed] = useState("");
+  const [newDose, setNewDose] = useState("");
+  const [newHeure, setNewHeure] = useState("08:00");
+
+  const openEditMesures = () => {
+    setMRC(patientData?.rythmeCardiaque?.toString() ?? "");
+    setMSys(patientData?.tensionSystolique?.toString() ?? "");
+    setMDia(patientData?.tensionDiastolique?.toString() ?? "");
+    setMPoids(patientData?.poids?.toString() ?? "");
+    setMGly(patientData?.glycemie?.toString() ?? "");
+    setEditMesures(true);
+  };
+
+  const saveMesures = async () => {
+    await onUpdateMesures({
+      rythmeCardiaque: mRC ? parseInt(mRC) : undefined,
+      tensionSystolique: mSys ? parseInt(mSys) : undefined,
+      tensionDiastolique: mDia ? parseInt(mDia) : undefined,
+      poids: mPoids ? parseFloat(mPoids) : undefined,
+      glycemie: mGly ? parseFloat(mGly) : undefined,
+    });
+    setEditMesures(false);
+  };
+
+  type VitalRow = { label: string; value: string; unit: string; icon: React.ElementType; color: string; bg: string; status: string; statusOk: boolean };
+  const vitals: VitalRow[] = [
+    {
+      label: "Rythme cardiaque",
+      value: patientData?.rythmeCardiaque ? String(patientData.rythmeCardiaque) : "—",
+      unit: "BPM",
+      icon: Heart,
+      color: "#EF4444", bg: "#FEE2E2",
+      status: !patientData?.rythmeCardiaque ? "Non renseigné" : (patientData.rythmeCardiaque >= 60 && patientData.rythmeCardiaque <= 100 ? "Normal" : "À surveiller"),
+      statusOk: !!patientData?.rythmeCardiaque && patientData.rythmeCardiaque >= 60 && patientData.rythmeCardiaque <= 100,
+    },
+    {
+      label: "Tension artérielle",
+      value: (patientData?.tensionSystolique && patientData?.tensionDiastolique)
+        ? `${patientData.tensionSystolique}/${patientData.tensionDiastolique}` : "—",
+      unit: "cmHg",
+      icon: Activity,
+      color: "#2563EB", bg: "#DBEAFE",
+      status: !patientData?.tensionSystolique ? "Non renseigné" : (patientData.tensionSystolique >= 90 && patientData.tensionSystolique <= 140 ? "Normal" : "À surveiller"),
+      statusOk: !!patientData?.tensionSystolique && patientData.tensionSystolique >= 90 && patientData.tensionSystolique <= 140,
+    },
+    {
+      label: "Poids",
+      value: patientData?.poids ? String(patientData.poids) : "—",
+      unit: "kg",
+      icon: Scale,
+      color: "#059669", bg: "#DCFCE7",
+      status: !patientData?.poids ? "Non renseigné" : "Stable",
+      statusOk: !!patientData?.poids,
+    },
+    {
+      label: "Glycémie",
+      value: patientData?.glycemie ? String(patientData.glycemie) : "—",
+      unit: "g/L",
+      icon: Droplets,
+      color: "#D97706", bg: "#FEF3C7",
+      status: !patientData?.glycemie ? "Non renseigné" : (patientData.glycemie >= 0.7 && patientData.glycemie <= 1.1 ? "Normal" : "À surveiller"),
+      statusOk: !!patientData?.glycemie && patientData.glycemie >= 0.7 && patientData.glycemie <= 1.1,
+    },
+  ];
+
+  const prisCnt = rappels.filter((r) => r.pris).length;
+
   return (
     <div className="px-4 pb-6 pt-4 space-y-5">
 
@@ -1595,14 +1676,15 @@ function SuiviTab({ orders, prescriptions, patientName, onOrderFromOrdonnance }:
         <div className="relative z-10">
           <p className="text-xs text-blue-200 mb-1">Tableau de bord santé</p>
           <h2 className="text-xl font-bold">{patientName || "Mon espace"}</h2>
-          <p className="text-xs text-blue-200 mt-1">Dernière mise à jour : aujourd'hui à 08h30</p>
           <div className="flex items-center gap-2 mt-3">
             <span className="inline-flex items-center gap-1.5 bg-white/20 backdrop-blur px-3 py-1 rounded-full text-xs font-medium">
               <CheckCircle2 className="w-3 h-3" /> Dossier à jour
             </span>
-            <span className="inline-flex items-center gap-1.5 bg-white/20 backdrop-blur px-3 py-1 rounded-full text-xs font-medium">
-              <Pill className="w-3 h-3" /> 3 rappels aujourd'hui
-            </span>
+            {rappels.length > 0 && (
+              <span className="inline-flex items-center gap-1.5 bg-white/20 backdrop-blur px-3 py-1 rounded-full text-xs font-medium">
+                <Pill className="w-3 h-3" /> {rappels.length} rappel(s) aujourd'hui
+              </span>
+            )}
           </div>
         </div>
         <div className="absolute -right-6 -top-6 w-28 h-28 rounded-full bg-white/10" />
@@ -1611,11 +1693,14 @@ function SuiviTab({ orders, prescriptions, patientName, onOrderFromOrdonnance }:
 
       {/* ── Mesures de santé ── */}
       <div>
-        <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">
-          Dernières mesures
-        </p>
+        <div className="flex items-center justify-between mb-3">
+          <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest">Dernières mesures</p>
+          <button onClick={openEditMesures} className="flex items-center gap-1 text-xs text-blue-600 font-semibold">
+            <Pencil className="w-3 h-3" /> Modifier
+          </button>
+        </div>
         <div className="grid grid-cols-2 gap-3">
-          {mockVitals.map(({ label, value, unit, icon: Icon, color, bg, status, statusOk }) => (
+          {vitals.map(({ label, value, unit, icon: Icon, color, bg, status, statusOk }) => (
             <div key={label} className="bg-white rounded-2xl border border-gray-100 p-4">
               <div className="flex items-center gap-2 mb-2">
                 <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0" style={{ backgroundColor: bg }}>
@@ -1627,53 +1712,177 @@ function SuiviTab({ orders, prescriptions, patientName, onOrderFromOrdonnance }:
                 <span className="text-2xl font-bold text-gray-900">{value}</span>
                 <span className="text-xs text-gray-400">{unit}</span>
               </div>
-              <p className="text-xs mt-1 font-medium" style={{ color: statusOk ? "#059669" : "#D4680F" }}>
-                {statusOk ? "✓ " : "⚠ "}{status}
+              <p className="text-xs mt-1 font-medium" style={{ color: value === "—" ? "#9CA3AF" : statusOk ? "#059669" : "#D4680F" }}>
+                {value === "—" ? status : (statusOk ? "✓ " : "⚠ ") + status}
               </p>
             </div>
           ))}
         </div>
       </div>
 
+      {/* ── Modal édition mesures ── */}
+      {editMesures && (
+        <div className="fixed inset-0 z-50 bg-black/40 flex items-end sm:items-center justify-center p-0 sm:p-4">
+          <div className="bg-white w-full sm:max-w-md sm:rounded-2xl rounded-t-2xl p-5 space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="font-semibold text-gray-900">Mes mesures de santé</h3>
+              <button onClick={() => setEditMesures(false)} className="p-1.5 rounded-full hover:bg-gray-100">
+                <X className="w-5 h-5 text-gray-500" />
+              </button>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              {[
+                { label: "Rythme cardiaque (BPM)", val: mRC, set: setMRC, placeholder: "ex: 74" },
+                { label: "Poids (kg)", val: mPoids, set: setMPoids, placeholder: "ex: 70" },
+                { label: "Tension systolique", val: mSys, set: setMSys, placeholder: "ex: 12" },
+                { label: "Tension diastolique", val: mDia, set: setMDia, placeholder: "ex: 8" },
+                { label: "Glycémie (g/L)", val: mGly, set: setMGly, placeholder: "ex: 0.95" },
+              ].map(({ label, val, set, placeholder }) => (
+                <div key={label} className="col-span-1 flex flex-col gap-1">
+                  <label className="text-[11px] text-gray-500 font-medium">{label}</label>
+                  <input
+                    type="number"
+                    step="any"
+                    value={val}
+                    onChange={(e) => set(e.target.value)}
+                    placeholder={placeholder}
+                    className="w-full px-3 py-2 rounded-xl bg-gray-50 border border-gray-200 outline-none focus:border-blue-400 text-sm"
+                  />
+                </div>
+              ))}
+            </div>
+            <button
+              onClick={saveMesures}
+              className="w-full py-3 rounded-xl text-white font-medium"
+              style={{ backgroundColor: "#1A3072" }}
+            >
+              Enregistrer
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* ── Rappels médicaments ── */}
       <div>
         <div className="flex items-center justify-between mb-3">
-          <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest">
-            Rappels du jour
-          </p>
-          <span className="text-xs font-semibold text-blue-600">
-            {mockReminders.filter(r => r.taken).length}/{mockReminders.length} pris
-          </span>
+          <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest">Rappels du jour</p>
+          <div className="flex items-center gap-3">
+            {rappels.length > 0 && (
+              <span className="text-xs font-semibold text-blue-600">{prisCnt}/{rappels.length} pris</span>
+            )}
+            <button
+              onClick={() => setShowAddRappel(true)}
+              className="flex items-center gap-1 text-xs text-blue-600 font-semibold"
+            >
+              <Plus className="w-3 h-3" /> Ajouter
+            </button>
+          </div>
         </div>
-        <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden divide-y divide-gray-50">
-          {mockReminders.map((r) => (
-            <div key={r.name} className="flex items-center gap-3 px-4 py-3">
-              <div
-                className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
-                style={{ backgroundColor: r.taken ? "#DCFCE7" : "#EEF1F8" }}
-              >
-                <Pill className="w-4 h-4" style={{ color: r.taken ? "#059669" : "#1A3072" }} />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-gray-900 truncate">{r.name}</p>
-                <p className="text-xs text-gray-400 mt-0.5">{r.dose}</p>
-              </div>
-              <div className="flex flex-col items-end gap-1">
-                <span className="text-xs font-bold text-gray-700">{r.time}</span>
-                <span
-                  className="text-[10px] px-2 py-0.5 rounded-full font-semibold"
-                  style={r.taken
-                    ? { backgroundColor: "#DCFCE7", color: "#059669" }
-                    : { backgroundColor: "#EEF1F8", color: "#1A3072" }
-                  }
+
+        {rappels.length === 0 ? (
+          <div className="bg-white rounded-2xl border border-gray-100 p-6 text-center">
+            <Pill className="w-8 h-8 text-gray-300 mx-auto mb-2" />
+            <p className="text-sm text-gray-400">Aucun rappel pour aujourd'hui.</p>
+            <button
+              onClick={() => setShowAddRappel(true)}
+              className="mt-3 text-xs text-blue-600 font-semibold"
+            >
+              + Ajouter un rappel
+            </button>
+          </div>
+        ) : (
+          <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden divide-y divide-gray-50">
+            {rappels.map((r) => (
+              <div key={r.id} className="flex items-center gap-3 px-4 py-3">
+                <button
+                  onClick={() => onToggleRappel(r)}
+                  className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition"
+                  style={{ backgroundColor: r.pris ? "#DCFCE7" : "#EEF1F8" }}
                 >
-                  {r.taken ? "Pris ✓" : "À prendre"}
-                </span>
+                  <Pill className="w-4 h-4" style={{ color: r.pris ? "#059669" : "#1A3072" }} />
+                </button>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-gray-900 truncate">{r.medicamentNom}</p>
+                  {r.dose && <p className="text-xs text-gray-400 mt-0.5">{r.dose}</p>}
+                </div>
+                <div className="flex flex-col items-end gap-1 shrink-0">
+                  <span className="text-xs font-bold text-gray-700">{r.heure}</span>
+                  <span
+                    className="text-[10px] px-2 py-0.5 rounded-full font-semibold"
+                    style={r.pris
+                      ? { backgroundColor: "#DCFCE7", color: "#059669" }
+                      : { backgroundColor: "#EEF1F8", color: "#1A3072" }
+                    }
+                  >
+                    {r.pris ? "Pris ✓" : "À prendre"}
+                  </span>
+                </div>
+                <button
+                  onClick={() => onDeleteRappel(r.id)}
+                  className="p-1 rounded-full hover:bg-gray-100 ml-1"
+                >
+                  <X className="w-3.5 h-3.5 text-gray-300" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* ── Modal ajout rappel ── */}
+      {showAddRappel && (
+        <div className="fixed inset-0 z-50 bg-black/40 flex items-end sm:items-center justify-center p-0 sm:p-4">
+          <div className="bg-white w-full sm:max-w-sm sm:rounded-2xl rounded-t-2xl p-5 space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="font-semibold text-gray-900">Nouveau rappel</h3>
+              <button onClick={() => setShowAddRappel(false)} className="p-1.5 rounded-full hover:bg-gray-100">
+                <X className="w-5 h-5 text-gray-500" />
+              </button>
+            </div>
+            <div className="space-y-3">
+              <div>
+                <label className="text-xs text-gray-500 font-medium">Médicament</label>
+                <input
+                  value={newMed}
+                  onChange={(e) => setNewMed(e.target.value)}
+                  placeholder="ex: Doliprane 1000mg"
+                  className="mt-1 w-full px-3 py-2.5 rounded-xl bg-gray-50 border border-gray-200 outline-none focus:border-blue-400 text-sm"
+                />
+              </div>
+              <div>
+                <label className="text-xs text-gray-500 font-medium">Dose (optionnel)</label>
+                <input
+                  value={newDose}
+                  onChange={(e) => setNewDose(e.target.value)}
+                  placeholder="ex: 1 comprimé"
+                  className="mt-1 w-full px-3 py-2.5 rounded-xl bg-gray-50 border border-gray-200 outline-none focus:border-blue-400 text-sm"
+                />
+              </div>
+              <div>
+                <label className="text-xs text-gray-500 font-medium">Heure</label>
+                <input
+                  type="time"
+                  value={newHeure}
+                  onChange={(e) => setNewHeure(e.target.value)}
+                  className="mt-1 w-full px-3 py-2.5 rounded-xl bg-gray-50 border border-gray-200 outline-none focus:border-blue-400 text-sm"
+                />
               </div>
             </div>
-          ))}
+            <button
+              disabled={!newMed.trim()}
+              onClick={async () => {
+                await onAddRappel(newMed, newDose, newHeure);
+                setNewMed(""); setNewDose(""); setNewHeure("08:00");
+                setShowAddRappel(false);
+              }}
+              className="w-full py-3 rounded-xl text-white font-medium disabled:opacity-50"
+              style={{ backgroundColor: "#1A3072" }}
+            >
+              Enregistrer
+            </button>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* ── Ordonnances ── */}
       <div>
@@ -1948,6 +2157,8 @@ export function PatientSpace({ onLogout, userId }: Props) {
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [apiOrdonnances, setApiOrdonnances] = useState<OrdonnanceAPI[]>([]);
   const [patientName, setPatientName] = useState("");
+  const [patientData, setPatientData] = useState<PatientAPI | null>(null);
+  const [rappels, setRappels] = useState<RappelAPI[]>([]);
   const [deliveryAddress, setDeliveryAddress] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<"cash" | "card">("cash");
 
@@ -1997,8 +2208,10 @@ export function PatientSpace({ onLogout, userId }: Props) {
   useEffect(() => {
     if (!userId) return;
     patientsApi.getById(userId).then((p) => {
+      setPatientData(p);
       setPatientName(`${p.prenom} ${p.nom}`);
     }).catch(() => {});
+    rappelsApi.getJour(userId).then(setRappels).catch(() => {});
     demandesApi.getByPatient(userId).then((demandes) => {
       setApiDemandes(demandes);
       demandes.forEach((d) => {
@@ -2073,6 +2286,38 @@ export function PatientSpace({ onLogout, userId }: Props) {
     tab === "search" &&
     step !== "search" &&
     step !== "tracking";
+
+  const handleToggleRappel = async (rappel: RappelAPI) => {
+    try {
+      const updated = rappel.pris
+        ? await rappelsApi.annulerPris(rappel.id)
+        : await rappelsApi.marquerPris(rappel.id);
+      setRappels((prev) => prev.map((r) => r.id === updated.id ? updated : r));
+    } catch { /* silently ignore */ }
+  };
+
+  const handleAddRappel = async (medicamentNom: string, dose: string, heure: string) => {
+    if (!userId || !medicamentNom.trim() || !heure) return;
+    try {
+      const r = await rappelsApi.creer({ patientId: userId, medicamentNom: medicamentNom.trim(), dose: dose.trim() || undefined, heure, recurrent: true });
+      setRappels((prev) => [...prev, r].sort((a, b) => a.heure.localeCompare(b.heure)));
+    } catch { /* silently ignore */ }
+  };
+
+  const handleDeleteRappel = async (id: string) => {
+    try {
+      await rappelsApi.supprimer(id);
+      setRappels((prev) => prev.filter((r) => r.id !== id));
+    } catch { /* silently ignore */ }
+  };
+
+  const handleUpdateMesures = async (mesures: Parameters<typeof patientsApi.updateMesures>[1]) => {
+    if (!userId) return;
+    try {
+      const updated = await patientsApi.updateMesures(userId, mesures);
+      setPatientData(updated);
+    } catch { /* silently ignore */ }
+  };
 
   const handleSearch = async (q: string) => {
     setQuery(q);
@@ -2469,6 +2714,12 @@ export function PatientSpace({ onLogout, userId }: Props) {
             orders={apiOrderDisplays}
             prescriptions={apiPresDisplays}
             patientName={patientName}
+            patientData={patientData}
+            rappels={rappels}
+            onToggleRappel={handleToggleRappel}
+            onAddRappel={handleAddRappel}
+            onDeleteRappel={handleDeleteRappel}
+            onUpdateMesures={handleUpdateMesures}
             onOrderFromOrdonnance={async (drugs, ordonnanceId) => {
               setItems(drugs);
               setQuery(drugs[0] ?? "ordonnance");
