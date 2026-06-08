@@ -130,6 +130,10 @@ export function LoginPage({ onLogin }: Props) {
   const focusStyle = (color: string) => (e: React.FocusEvent<HTMLElement>) => { (e.target as HTMLElement).style.borderColor = color; };
   const blurStyle  = (e: React.FocusEvent<HTMLElement>) => { (e.target as HTMLElement).style.borderColor = "#E5E7EB"; };
 
+  // N'accepte que chiffres, +, espaces, tirets, parenthèses
+  const handlePhone = (e: React.ChangeEvent<HTMLInputElement>) =>
+    setPhone(e.target.value.replace(/[^\d+\s\-()]/g, ""));
+
   const roleEnum = {
     patient:  "PATIENT",
     doctor:   "MEDECIN",
@@ -446,7 +450,7 @@ export function LoginPage({ onLogin }: Props) {
                   </Field>
                 </div>
                 <Field label="Téléphone" color={BLUE}>
-                  <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)}
+                  <input type="tel" value={phone} onChange={handlePhone}
                     className={inputCls} onFocus={focusStyle(BLUE)} onBlur={blurStyle}
                     placeholder="+225 07 12 34 56 78" required />
                 </Field>
@@ -484,7 +488,7 @@ export function LoginPage({ onLogin }: Props) {
                     placeholder="docteur@clinique.ci" required />
                 </Field>
                 <Field label="Téléphone" color={BLUE}>
-                  <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)}
+                  <input type="tel" value={phone} onChange={handlePhone}
                     className={inputCls} onFocus={focusStyle(BLUE)} onBlur={blurStyle}
                     placeholder="+225 27 22 00 00 00" required />
                 </Field>
@@ -533,7 +537,7 @@ export function LoginPage({ onLogin }: Props) {
                     placeholder="23 Boulevard de la République, Plateau, Abidjan" required />
                 </Field>
                 <Field label="Téléphone (optionnel)" color={BLUE}>
-                  <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)}
+                  <input type="tel" value={phone} onChange={handlePhone}
                     className={inputCls} onFocus={focusStyle(BLUE)} onBlur={blurStyle}
                     placeholder="+225 27 22 00 00 00" />
                 </Field>
@@ -579,7 +583,7 @@ export function LoginPage({ onLogin }: Props) {
                     placeholder="livreur@email.ci" required />
                 </Field>
                 <Field label="Téléphone" color={BLUE}>
-                  <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)}
+                  <input type="tel" value={phone} onChange={handlePhone}
                     className={inputCls} onFocus={focusStyle(BLUE)} onBlur={blurStyle}
                     placeholder="+225 07 00 00 00 00" required />
                 </Field>
