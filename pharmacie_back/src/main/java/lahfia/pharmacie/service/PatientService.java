@@ -30,6 +30,10 @@ public class PatientService {
         if (patientRepository.existsByTelephone(patient.getTelephone())) {
             throw new IllegalArgumentException("Ce numéro de téléphone est déjà utilisé.");
         }
+        if (patient.getEmail() != null && !patient.getEmail().isBlank()
+                && patientRepository.existsByEmail(patient.getEmail())) {
+            throw new IllegalArgumentException("Cet email est déjà utilisé.");
+        }
         if (patient.getPasswordHash() != null && !patient.getPasswordHash().isBlank()) {
             patient.setPasswordHash(passwordEncoder.encode(patient.getPasswordHash()));
         }
