@@ -90,6 +90,7 @@ export interface PatientAPI {
   telephone: string;
   latitude?: number;
   longitude?: number;
+  createdAt?: string;
 }
 
 export interface PharmacieAPI {

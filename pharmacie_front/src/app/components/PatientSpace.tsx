@@ -1255,10 +1255,12 @@ function ProfilePage({ onLogout, userId, orders }: { onLogout: () => void; userI
               <p className="text-lg font-bold text-gray-900 truncate">{name}</p>
             )}
             <p className="text-sm text-gray-500 mt-0.5">{patientData?.email ?? ""}</p>
-            <span className="inline-flex items-center gap-1 mt-1 text-xs text-green-600">
-              <CheckCircle2 className="w-3.5 h-3.5" />
-              Membre depuis janvier 2026
-            </span>
+            {patientData?.createdAt && (
+              <span className="inline-flex items-center gap-1 mt-1 text-xs text-green-600">
+                <CheckCircle2 className="w-3.5 h-3.5" />
+                Membre depuis {new Date(patientData.createdAt).toLocaleDateString("fr-FR", { month: "long", year: "numeric" })}
+              </span>
+            )}
           </div>
           <button
             onClick={() => setEditing(!editing)}
