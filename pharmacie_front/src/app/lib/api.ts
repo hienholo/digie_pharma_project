@@ -40,8 +40,14 @@ async function http<T>(path: string, init: RequestInit = {}): Promise<T> {
     },
   });
   if (!res.ok) {
-    const msg = await res.text().catch(() => `Erreur ${res.status}`);
-    throw new Error(msg || `Erreur ${res.status}`);
+    let msg = `Erreur ${res.status}`;
+    try {
+      const body = await res.json();
+      msg = body.message ?? body.error ?? msg;
+    } catch {
+      msg = await res.text().catch(() => msg) || msg;
+    }
+    throw new Error(msg);
   }
   return res.json() as Promise<T>;
 }
