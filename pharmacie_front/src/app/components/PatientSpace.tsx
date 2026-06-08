@@ -738,7 +738,7 @@ function ModeModule({
             <div className="flex-1">
               <p className="font-semibold text-gray-900">Livraison à domicile</p>
               <p className="text-sm text-gray-500 mt-0.5">
-                Livré chez vous · +300 DA de frais
+                Livré chez vous · +300 FCFA de frais
               </p>
               <div className="mt-2 flex items-center gap-1 text-sm text-green-600">
                 <Clock className="w-3.5 h-3.5" />
@@ -865,7 +865,7 @@ function ValidationModule({
         {mode === "delivery" && (
           <div className="flex justify-between text-sm text-gray-500 pt-2 border-t border-gray-100">
             <span>Frais de livraison</span>
-            <span className="font-semibold text-gray-900">300 DA</span>
+            <span className="font-semibold text-gray-900">300 FCFA</span>
           </div>
         )}
       </div>
@@ -1010,7 +1010,7 @@ function PaymentModule({
         {fee > 0 && (
           <div className="flex justify-between font-semibold text-gray-900 pt-2 border-t border-gray-200">
             <span>Frais de livraison</span>
-            <span style={{ color: "#1A3072" }}>{fee} DA</span>
+            <span style={{ color: "#1A3072" }}>{fee} FCFA</span>
           </div>
         )}
       </div>

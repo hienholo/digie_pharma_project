@@ -106,7 +106,7 @@ export function CheckoutSheet({
             {fee > 0 && (
               <div className="flex justify-between pt-2 border-t border-gray-100">
                 <span>Frais de livraison</span>
-                <span style={{ color: "#1A3072" }}>{fee} DA</span>
+                <span style={{ color: "#1A3072" }}>{fee} FCFA</span>
               </div>
             )}
           </div>
