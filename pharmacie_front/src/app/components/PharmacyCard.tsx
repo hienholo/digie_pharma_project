@@ -1,15 +1,15 @@
-import { MapPin, Clock, Truck, Package, Star } from "lucide-react";
+import { MapPin, Truck, Package } from "lucide-react";
 
 export type Pharmacy = {
   id: string;
   name: string;
   address: string;
-  distanceKm: number;
+  distanceKm?: number;
   open: boolean;
-  rating: number;
+  rating?: number;
   delivery: boolean;
   pickup: boolean;
-  eta: string;
+  eta?: string;
   available: "in-stock" | "partial" | "unknown";
 };
 
@@ -45,20 +45,14 @@ export function PharmacyCard({ pharmacy, onOrder }: Props) {
             )}
           </div>
           <div className="mt-1 flex items-center gap-1 text-sm text-gray-500">
-            <MapPin className="w-4 h-4" />
+            <MapPin className="w-4 h-4 shrink-0" />
             <span className="truncate">{pharmacy.address}</span>
-            <span className="mx-1">·</span>
-            <span>{pharmacy.distanceKm.toFixed(1)} km</span>
-          </div>
-          <div className="mt-2 flex items-center gap-4 text-sm text-gray-600">
-            <span className="flex items-center gap-1">
-              <Star className="w-4 h-4 text-yellow-500" />
-              {pharmacy.rating.toFixed(1)}
-            </span>
-            <span className="flex items-center gap-1">
-              <Clock className="w-4 h-4" />
-              {pharmacy.eta}
-            </span>
+            {(pharmacy.distanceKm ?? 0) > 0 && (
+              <>
+                <span className="mx-1 shrink-0">·</span>
+                <span className="shrink-0">{pharmacy.distanceKm!.toFixed(1)} km</span>
+              </>
+            )}
           </div>
         </div>
       </div>

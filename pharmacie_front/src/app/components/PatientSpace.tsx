@@ -4,7 +4,7 @@ import {
   notificationsApi, patientsApi, livraisonsApi,
 } from "../lib/api";
 import type { PharmacieAPI, NotificationAPI, CommandeAPI, PatientAPI, DemandeAPI, DemandeReponseAPI, OrdonnanceAPI } from "../lib/types";
-import { ocrMock, DRUG_PRICE } from "../datamock/ocr.mock";
+import { ocrMock } from "../datamock/ocr.mock";
 import { mockVitals, mockReminders } from "../datamock/health.mock";
 import type { Notif } from "../datamock/notifications.mock";
 import {
@@ -25,7 +25,6 @@ import {
   Pill,
   CheckCircle2,
   ShieldCheck,
-  Star,
   Clock,
   Upload,
   Edit3,
@@ -250,7 +249,7 @@ function SearchModule({
           {nearbyPharmacies.map((p) => (
             <button
               key={p.id}
-              onClick={() => onSearch(q.trim() || p.name)}
+              onClick={() => onSearch(q.trim())}
               className="w-full flex items-center gap-3 bg-white rounded-2xl p-4 text-left border border-gray-100 hover:border-blue-200 hover:shadow-sm transition"
             >
               {/* Avatar */}
@@ -265,11 +264,14 @@ function SearchModule({
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold text-gray-900 truncate">{p.name}</p>
                 <div className="flex items-center gap-1.5 mt-0.5">
-                  <MapPin className="w-3 h-3 text-gray-400" />
-                  <span className="text-xs text-gray-500">{p.distanceKm} km</span>
-                  <span className="text-gray-300">·</span>
-                  <Star className="w-3 h-3 text-amber-400" fill="#FBBF24" />
-                  <span className="text-xs text-gray-500">{p.rating}</span>
+                  <MapPin className="w-3 h-3 text-gray-400 shrink-0" />
+                  <span className="text-xs text-gray-500 truncate">{p.address}</span>
+                  {(p.distanceKm ?? 0) > 0 && (
+                    <>
+                      <span className="text-gray-300 shrink-0">·</span>
+                      <span className="text-xs text-gray-500 shrink-0">{p.distanceKm!.toFixed(1)} km</span>
+                    </>
+                  )}
                 </div>
                 <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
                   <span
@@ -284,7 +286,7 @@ function SearchModule({
                   </span>
                   {p.delivery && p.open && (
                     <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold bg-blue-50 text-blue-600">
-                      🚴 {p.eta}
+                      🚴 Livraison
                     </span>
                   )}
                   {p.available === "in-stock" && p.open && (
@@ -599,25 +601,19 @@ function PharmaciesModule({
                   <div className="mt-1 flex items-center gap-1 text-sm text-gray-500">
                     <MapPin className="w-4 h-4 shrink-0" />
                     <span className="truncate">{p.address}</span>
-                    <span className="mx-1 shrink-0">·</span>
-                    <span className="shrink-0">{p.distanceKm.toFixed(1)} km</span>
-                  </div>
-                  <div className="mt-2 flex items-center gap-4 text-sm text-gray-600">
-                    <span className="flex items-center gap-1">
-                      <Star className="w-3.5 h-3.5 text-yellow-500" />
-                      {p.rating.toFixed(1)}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Clock className="w-3.5 h-3.5" />
-                      {p.eta}
-                    </span>
-                    {p.delivery && (
-                      <span className="flex items-center gap-1 text-blue-600">
-                        <Truck className="w-3.5 h-3.5" />
-                        Livraison
-                      </span>
+                    {(p.distanceKm ?? 0) > 0 && (
+                      <>
+                        <span className="mx-1 shrink-0">·</span>
+                        <span className="shrink-0">{p.distanceKm!.toFixed(1)} km</span>
+                      </>
                     )}
                   </div>
+                  {p.delivery && (
+                    <div className="mt-2 flex items-center gap-2 text-sm text-blue-600">
+                      <Truck className="w-3.5 h-3.5" />
+                      Livraison disponible
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -709,7 +705,7 @@ function ModeModule({
               </p>
               <div className="mt-2 flex items-center gap-1 text-sm text-blue-600">
                 <Clock className="w-3.5 h-3.5" />
-                Prêt en {pharmacy.eta}
+                Prêt à la demande
               </div>
             </div>
             {selected === "pickup" && (
@@ -746,7 +742,7 @@ function ModeModule({
               </p>
               <div className="mt-2 flex items-center gap-1 text-sm text-green-600">
                 <Clock className="w-3.5 h-3.5" />
-                {pharmacy.eta}
+                Livraison à domicile
               </div>
             </div>
             {selected === "delivery" && (
@@ -785,10 +781,8 @@ function ValidationModule({
 }) {
   const [address, setAddress] = useState("");
 
-  const displayItems = items.length ? items : ["Médicament (article)"];
-  const subtotal = displayItems.length * DRUG_PRICE;
+  const displayItems = items.length ? items : ["Médicament"];
   const fee = mode === "delivery" ? 300 : 0;
-  const total = subtotal + fee;
 
   return (
     <div className="flex flex-col gap-4 px-5 py-5 pb-6">
@@ -839,9 +833,9 @@ function ValidationModule({
         </div>
         <ul className="divide-y divide-gray-50">
           {displayItems.map((it, i) => (
-            <li key={i} className="flex justify-between items-center px-4 py-3 text-sm">
+            <li key={i} className="flex items-center gap-2 px-4 py-3 text-sm">
+              <Pill className="w-3.5 h-3.5 text-blue-400 shrink-0" />
               <span className="text-gray-700">{it}</span>
-              <span className="text-gray-500">{DRUG_PRICE} DA</span>
             </li>
           ))}
         </ul>
@@ -865,17 +859,15 @@ function ValidationModule({
       {/* Total */}
       <div className="bg-white rounded-2xl border border-gray-200 p-4 space-y-2">
         <div className="flex justify-between text-sm text-gray-500">
-          <span>Sous-total</span>
-          <span>{subtotal} DA</span>
+          <span>Médicaments</span>
+          <span className="italic text-gray-400">Prix en pharmacie</span>
         </div>
-        <div className="flex justify-between text-sm text-gray-500">
-          <span>Frais de {mode === "delivery" ? "livraison" : "service"}</span>
-          <span>{fee} DA</span>
-        </div>
-        <div className="flex justify-between font-semibold text-gray-900 pt-2 border-t border-gray-100">
-          <span>Total</span>
-          <span style={{ color: "#1A3072" }}>{total} DA</span>
-        </div>
+        {mode === "delivery" && (
+          <div className="flex justify-between text-sm text-gray-500 pt-2 border-t border-gray-100">
+            <span>Frais de livraison</span>
+            <span className="font-semibold text-gray-900">300 DA</span>
+          </div>
+        )}
       </div>
 
       <button
@@ -905,10 +897,7 @@ function PaymentModule({
 }) {
   const [payMethod, setPayMethod] = useState<"cash" | "card">("cash");
 
-  const displayItems = items.length ? items : ["Médicament (article)"];
-  const subtotal = displayItems.length * DRUG_PRICE;
   const fee = mode === "delivery" ? 300 : 0;
-  const total = subtotal + fee;
 
   return (
     <div className="flex flex-col gap-4 px-5 py-5 pb-6">
@@ -1013,9 +1002,17 @@ function PaymentModule({
       )}
 
       {/* Order total */}
-      <div className="bg-gray-50 rounded-2xl p-4 flex justify-between font-semibold text-gray-900">
-        <span>Total à payer</span>
-        <span style={{ color: "#1A3072" }}>{total} DA</span>
+      <div className="bg-gray-50 rounded-2xl p-4 space-y-2 text-sm">
+        <div className="flex justify-between text-gray-600">
+          <span>Médicaments</span>
+          <span className="italic text-gray-400">À régler en pharmacie</span>
+        </div>
+        {fee > 0 && (
+          <div className="flex justify-between font-semibold text-gray-900 pt-2 border-t border-gray-200">
+            <span>Frais de livraison</span>
+            <span style={{ color: "#1A3072" }}>{fee} DA</span>
+          </div>
+        )}
       </div>
 
       <button
@@ -2035,12 +2032,10 @@ export function PatientSpace({ onLogout, userId }: Props) {
     id: p.id,
     name: p.nom,
     address: p.adresse,
-    distanceKm: p.distanceKm ?? 0,
+    distanceKm: p.distanceKm ?? undefined,
     open: true,
-    rating: 4.5,
     delivery: p.livraisonActive,
     pickup: true,
-    eta: "30 min",
     available: "unknown" as const,
   }));
 

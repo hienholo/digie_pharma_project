@@ -24,8 +24,6 @@ export function CheckoutSheet({
   if (!open || !pharmacy) return null;
 
   const fee = mode === "delivery" ? 300 : 0;
-  const subtotal = items.length * 450;
-  const total = subtotal + fee;
 
   return (
     <div className="fixed inset-0 z-50 bg-black/50 flex items-end sm:items-center justify-center p-0 sm:p-4">
@@ -51,10 +49,9 @@ export function CheckoutSheet({
               Articles ({items.length || 1})
             </div>
             <ul className="divide-y divide-gray-100 border border-gray-100 rounded-2xl">
-              {(items.length ? items : ["Article"]).map((it, i) => (
-                <li key={i} className="flex justify-between px-3 py-2 text-sm">
+              {(items.length ? items : ["Médicament"]).map((it, i) => (
+                <li key={i} className="px-3 py-2 text-sm">
                   <span>{it}</span>
-                  <span className="text-gray-500">450 DA</span>
                 </li>
               ))}
             </ul>
@@ -103,17 +100,15 @@ export function CheckoutSheet({
 
           <div className="border-t border-gray-100 pt-4 space-y-1 text-sm">
             <div className="flex justify-between">
-              <span className="text-gray-500">Sous-total</span>
-              <span>{subtotal} DA</span>
+              <span className="text-gray-500">Médicaments</span>
+              <span className="italic text-gray-400">Prix en pharmacie</span>
             </div>
-            <div className="flex justify-between">
-              <span className="text-gray-500">Frais</span>
-              <span>{fee} DA</span>
-            </div>
-            <div className="flex justify-between pt-2">
-              <span>Total</span>
-              <span style={{ color: "#1A3072" }}>{total} DA</span>
-            </div>
+            {fee > 0 && (
+              <div className="flex justify-between pt-2 border-t border-gray-100">
+                <span>Frais de livraison</span>
+                <span style={{ color: "#1A3072" }}>{fee} DA</span>
+              </div>
+            )}
           </div>
 
           <button
