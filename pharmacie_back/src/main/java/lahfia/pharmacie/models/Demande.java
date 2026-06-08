@@ -36,6 +36,9 @@ public class Demande {
     @Column(nullable = false)
     private Type type;
 
+    @Column(name = "medicament_recherche", length = 500)
+    private String medicamentRecherche;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private StatutDemande statut = StatutDemande.EN_COURS;

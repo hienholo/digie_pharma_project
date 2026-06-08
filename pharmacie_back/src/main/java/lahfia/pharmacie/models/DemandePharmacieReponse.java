@@ -51,4 +51,19 @@ public class DemandePharmacieReponse {
 
     @Column(name = "repondu_at")
     private LocalDateTime reponduAt;
+
+    @JsonProperty("pharmacieId")
+    public UUID getPharmacieId() { return pharmacie != null ? pharmacie.getId() : null; }
+
+    @JsonProperty("pharmacieNom")
+    public String getPharmacieNom() { return pharmacie != null ? pharmacie.getNom() : null; }
+
+    @JsonProperty("pharmacieAdresse")
+    public String getPharmacieAdresse() { return pharmacie != null ? pharmacie.getAdresse() : null; }
+
+    @JsonProperty("pharmacieTelephone")
+    public String getPharmaciePhone() { return pharmacie != null ? pharmacie.getTelephone() : null; }
+
+    @JsonProperty("demandeId")
+    public UUID getDemandeId() { return demande != null ? demande.getId() : null; }
 }

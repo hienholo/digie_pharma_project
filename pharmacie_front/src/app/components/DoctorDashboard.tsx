@@ -176,8 +176,8 @@ export function DoctorDashboard({ onLogout }: Props) {
       <aside className="hidden md:flex md:w-64 bg-white border-r border-gray-100 flex-col">
         <div className="px-6 py-4 border-b border-gray-100">
           <div className="flex items-center gap-2 font-bold text-lg" style={{ color: "#1A3072" }}>
-            <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white" style={{ backgroundColor: "#1A3072" }}>+</div>
-            LAHFIA
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white text-xs" style={{ backgroundColor: "#1A3072" }}>DP</div>
+            Digie-Pharma
           </div>
           <p className="text-xs text-gray-500 mt-1">Médecin</p>
         </div>
@@ -205,8 +205,8 @@ export function DoctorDashboard({ onLogout }: Props) {
           <aside className="w-64 bg-white h-full flex flex-col">
             <div className="px-4 py-4 flex items-center justify-between border-b border-gray-100">
               <div className="flex items-center gap-2 font-bold" style={{ color: "#1A3072" }}>
-                <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white" style={{ backgroundColor: "#1A3072" }}>+</div>
-                LAHFIA
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white text-xs" style={{ backgroundColor: "#1A3072" }}>DP</div>
+                Digie-Pharma
               </div>
               <button onClick={() => setSidebarOpen(false)} className="p-2 hover:bg-gray-100 rounded-lg">
                 <X className="w-5 h-5" />

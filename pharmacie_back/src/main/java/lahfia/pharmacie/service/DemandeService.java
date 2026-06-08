@@ -46,30 +46,39 @@ public class DemandeService {
 
     /**
      * Crée une demande et l'envoie aux pharmacies proches.
-     * Le patient peut chercher un médicament seul ou via une ordonnance.
+     * Utilise les coords de la requête, sinon celles du patient, sinon envoie à toutes les pharmacies.
      */
     @Transactional
     public Demande creerEtEnvoyer(UUID patientId, UUID ordonnanceId,
-                                   Type type, Double rayonKm) {
+                                   Type type, Double rayonKm,
+                                   String medicamentRecherche,
+                                   Double requestLatitude, Double requestLongitude) {
         Patient patient = patientService.findById(patientId);
 
         Demande.DemandeBuilder builder = Demande.builder()
                 .patient(patient)
                 .type(type)
-                .statut(StatutDemande.EN_COURS);
+                .statut(StatutDemande.EN_COURS)
+                .medicamentRecherche(medicamentRecherche);
 
         if (ordonnanceId != null) {
-            // La demande sera liée à l'ordonnance (type ORDONNANCE)
-            // L'ordonnance elle-même porte les médicaments détectés
             builder.ordonnance(Ordonnance.builder().id(ordonnanceId).build());
         }
 
         Demande demande = demandeRepository.save(builder.build());
 
-        // Trouver les pharmacies proches et créer une entrée de réponse par pharmacie
-        List<Pharmacie> pharmaciesProches = pharmacieService.rechercherAProximite(
-                patient.getLatitude(), patient.getLongitude(), rayonKm
-        );
+        // Coordonnées : requête > patient > fallback Abidjan
+        Double lat = requestLatitude != null ? requestLatitude :
+                     (patient.getLatitude() != null ? patient.getLatitude() : 5.3196);
+        Double lng = requestLongitude != null ? requestLongitude :
+                     (patient.getLongitude() != null ? patient.getLongitude() : -4.0167);
+
+        List<Pharmacie> pharmaciesProches = pharmacieService.rechercherAProximite(lat, lng, rayonKm);
+
+        // Aucune pharmacie dans le rayon → envoyer à toutes
+        if (pharmaciesProches.isEmpty()) {
+            pharmaciesProches = pharmacieService.findAll();
+        }
 
         for (Pharmacie pharmacie : pharmaciesProches) {
             reponseRepository.save(
@@ -156,6 +165,7 @@ public class DemandeService {
                             p.getNom(),
                             p.getTelephone(),
                             d.getType().name(),
+                            d.getMedicamentRecherche(),
                             ord != null ? ord.getId() : null,
                             ord != null ? ord.getImageUrl() : null,
                             meds,

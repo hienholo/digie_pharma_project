@@ -15,12 +15,12 @@ export function Header({ onNav, current, onLogout }: Props) {
           className="flex items-center gap-2"
         >
           <div
-            className="w-9 h-9 rounded-2xl flex items-center justify-center text-white"
+            className="w-9 h-9 rounded-2xl flex items-center justify-center text-white text-xs font-bold"
             style={{ backgroundColor: "#1A3072" }}
           >
-            L
+            DP
           </div>
-          <span style={{ color: "#1A3072" }}>LAHFIA</span>
+          <span className="font-bold" style={{ color: "#1A3072" }}>Digie-Pharma</span>
         </button>
 
         <nav className="hidden md:flex items-center gap-6 text-gray-600">

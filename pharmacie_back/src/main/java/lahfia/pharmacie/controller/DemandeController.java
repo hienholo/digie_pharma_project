@@ -67,7 +67,10 @@ public class DemandeController {
                         body.patientId(),
                         body.ordonnanceId(),
                         body.type(),
-                        body.rayonKm()
+                        body.rayonKm(),
+                        body.medicamentRecherche(),
+                        body.latitude(),
+                        body.longitude()
                 )
         );
     }
@@ -90,7 +93,10 @@ public class DemandeController {
             UUID patientId,
             UUID ordonnanceId,
             Type type,
-            Double rayonKm
+            Double rayonKm,
+            String medicamentRecherche,
+            Double latitude,
+            Double longitude
     ) {}
 
     record RepondreRequest(

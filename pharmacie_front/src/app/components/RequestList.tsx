@@ -63,7 +63,13 @@ export function RequestList({ requests, pharmacieId, onRepondu }: Props) {
                 ) : (
                   <div className="flex items-start gap-2 text-sm text-gray-600">
                     <Package className="w-4 h-4 text-gray-400 shrink-0 mt-0.5" />
-                    <span>{req.medicamentNoms.length > 0 ? req.medicamentNoms.join(", ") : "Médicament sans précision"}</span>
+                    <span>
+                      {req.medicamentRecherche
+                        ? req.medicamentRecherche
+                        : req.medicamentNoms.length > 0
+                          ? req.medicamentNoms.join(", ")
+                          : "Médicament sans précision"}
+                    </span>
                   </div>
                 )}
               </div>

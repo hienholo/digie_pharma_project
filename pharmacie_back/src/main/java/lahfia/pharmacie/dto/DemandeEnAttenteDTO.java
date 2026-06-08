@@ -11,6 +11,7 @@ public record DemandeEnAttenteDTO(
         String patientNom,
         String patientTelephone,
         String type,
+        String medicamentRecherche,
         UUID ordonnanceId,
         String ordonnanceImageUrl,
         List<String> medicamentNoms,

@@ -20,8 +20,8 @@ type Props = {
 
 const availLabels = {
   "in-stock": { text: "Disponible", color: "#10B981" },
-  partial: { text: "Partiellement dispo.", color: "#F47920" },
-  unknown: { text: "À confirmer", color: "#6B7280" },
+  partial: { text: "Partiellement disponible", color: "#F47920" },
+  unknown: { text: "Non disponible", color: "#EF4444" },
 };
 
 export function PharmacyCard({ pharmacy, onOrder }: Props) {

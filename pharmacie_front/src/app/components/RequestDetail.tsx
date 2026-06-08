@@ -82,7 +82,18 @@ export function RequestDetail({ request, pharmacieId, onClose, onRepondu }: Prop
             </div>
           )}
 
-          {/* Médicaments */}
+          {/* Médicament recherché (demande libre) */}
+          {request.medicamentRecherche && (
+            <div>
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Médicament recherché</p>
+              <div className="flex items-center gap-3 p-3 rounded-xl border border-[#D6DCF0] bg-[#EEF1F8]">
+                <Package className="w-4 h-4 text-[#1A3072] shrink-0" />
+                <span className="text-sm font-semibold text-[#1A3072]">{request.medicamentRecherche}</span>
+              </div>
+            </div>
+          )}
+
+          {/* Médicaments (ordonnance) */}
           {request.medicamentNoms.length > 0 && (
             <div>
               <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">

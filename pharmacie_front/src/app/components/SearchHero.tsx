@@ -20,10 +20,10 @@ export function SearchHero({ onSearch, onUpload }: Props) {
     >
       <div className="max-w-4xl mx-auto px-4 py-14 md:py-20 text-center text-white">
         <h1 className="text-white" style={{ fontSize: "2rem" }}>
-          Trouvez vos médicaments près de chez vous
+          Ne stressez plus pour trouver vos médicaments.
         </h1>
         <p className="mt-3 text-white/90">
-          Recherchez, commandez, recevez — en toute simplicité.
+          Une seule recherche — toutes les pharmacies partenaires autour de vous vous répondent.
         </p>
 
         <form

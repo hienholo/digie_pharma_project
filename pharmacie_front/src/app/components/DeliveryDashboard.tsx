@@ -128,7 +128,7 @@ function DeliveryHomeTab({
         <div className="relative z-10">
           <p className="text-sm text-white/80">Bonjour 👋</p>
           <h2 className="text-xl font-bold mt-0.5">Espace Livreur</h2>
-          <p className="text-xs text-white/70 mt-1">LAHFIA Livraison · Disponible</p>
+          <p className="text-xs text-white/70 mt-1">Digie-Pharma Livraison · Disponible</p>
         </div>
         <div className="absolute -right-4 -top-4 w-24 h-24 rounded-full bg-white/10" />
         <div className="absolute -right-2 top-10 w-14 h-14 rounded-full bg-white/10" />
@@ -427,7 +427,7 @@ function DeliveryProfileTab({
           </div>
           <div className="flex-1 min-w-0">
             <p className="font-bold text-gray-900">
-              {livreur ? `${livreur.prenom} ${livreur.nom}` : "Livreur LAHFIA"}
+              {livreur ? `${livreur.prenom} ${livreur.nom}` : "Livreur Digie-Pharma"}
             </p>
             <p className="text-xs text-gray-500 mt-0.5 truncate">{livreur?.telephone ?? ""}</p>
             <div className="flex items-center gap-1 mt-1">

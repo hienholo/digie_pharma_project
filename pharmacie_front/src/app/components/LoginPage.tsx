@@ -215,11 +215,11 @@ export function LoginPage({ onLogin }: Props) {
               style={{ background: `linear-gradient(135deg, ${BLUE_DARK} 0%, ${BLUE} 100%)` }}
             >
               <h1 className="text-2xl lg:text-3xl font-extrabold text-white leading-tight">
-                Votre santé,<br />connectée.
+                Ne stressez plus pour<br />trouver vos médicaments.
               </h1>
               <p className="mt-2 text-sm lg:text-base leading-relaxed" style={{ color: "#B8C5E5" }}>
-                Patients, médecins, pharmacies et livreurs —<br />
-                tous réunis sur une seule plateforme.
+                Une seule recherche, plusieurs pharmacies<br />
+                partenaires à proximité vous répondent.
               </p>
               <div className="flex justify-center items-center gap-1.5 mt-4">
                 <div className="w-1.5 h-1.5 rounded-full bg-white opacity-40" />

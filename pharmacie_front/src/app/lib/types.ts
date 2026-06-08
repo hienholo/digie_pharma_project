@@ -128,6 +128,7 @@ export interface DemandeAPI {
   patientId: string;
   type: "MEDICAMENT" | "ORDONNANCE";
   statut: "EN_COURS" | "REPONSE_RECUE" | "VALIDEE" | "ANNULEE";
+  medicamentRecherche?: string;
   ordonnanceId?: string;
   createdAt: string;
 }
@@ -135,9 +136,12 @@ export interface DemandeAPI {
 // Réponse d'une pharmacie à une demande (vue côté patient)
 export interface DemandeReponseAPI {
   id: string;
-  demandeId: string;
-  pharmacieId: string;
-  reponse: "DISPONIBLE" | "NON_DISPONIBLE" | "PARTIEL";
+  demandeId?: string;
+  pharmacieId?: string;
+  pharmacieNom?: string;
+  pharmacieAdresse?: string;
+  pharmacieTelephone?: string;
+  reponse: "DISPONIBLE" | "NON_DISPONIBLE" | "PARTIEL" | null;
   detailPartiel?: string;
   reponduAt?: string;
 }
@@ -150,6 +154,7 @@ export interface DemandeEnAttenteAPI {
   patientNom: string;
   patientTelephone: string;
   type: "MEDICAMENT" | "ORDONNANCE";
+  medicamentRecherche?: string;
   ordonnanceId?: string;
   ordonnanceImageUrl?: string;
   medicamentNoms: string[];
@@ -232,6 +237,9 @@ export interface CreateDemandePayload {
   type: "MEDICAMENT" | "ORDONNANCE";
   ordonnanceId?: string;
   rayonKm?: number;
+  medicamentRecherche?: string;
+  latitude?: number;
+  longitude?: number;
 }
 
 export interface CreateCommandePayload {

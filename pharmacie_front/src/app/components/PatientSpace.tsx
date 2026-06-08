@@ -3,7 +3,7 @@ import {
   pharmaciesApi, ordonnancesApi, demandesApi, commandesApi,
   notificationsApi, patientsApi, livraisonsApi,
 } from "../lib/api";
-import type { PharmacieAPI, NotificationAPI, CommandeAPI, PatientAPI, DemandeAPI, OrdonnanceAPI } from "../lib/types";
+import type { PharmacieAPI, NotificationAPI, CommandeAPI, PatientAPI, DemandeAPI, DemandeReponseAPI, OrdonnanceAPI } from "../lib/types";
 import { ocrMock, DRUG_PRICE } from "../datamock/ocr.mock";
 import { mockVitals, mockReminders } from "../datamock/health.mock";
 import type { Notif } from "../datamock/notifications.mock";
@@ -1868,13 +1868,13 @@ function SidebarNav({
       <div className="px-5 py-5 border-b border-gray-100">
         <div className="flex items-center gap-3">
           <div
-            className="w-10 h-10 rounded-2xl flex items-center justify-center text-white font-bold text-lg"
+            className="w-10 h-10 rounded-2xl flex items-center justify-center text-white font-bold text-xs"
             style={{ backgroundColor: "#1A3072" }}
           >
-            L
+            DP
           </div>
           <div>
-            <p className="font-bold text-base" style={{ color: "#1A3072" }}>LAHFIA</p>
+            <p className="font-bold text-base" style={{ color: "#1A3072" }}>Digie-Pharma</p>
             <p className="text-xs text-gray-400">Espace Patient</p>
           </div>
         </div>
@@ -1945,6 +1945,8 @@ export function PatientSpace({ onLogout, userId }: Props) {
   const [demandeId, setDemandeId] = useState<string | null>(null);
   const [commandePharmacyMap, setCommandePharmacyMap] = useState<Record<string, string>>({});
   const [apiDemandes, setApiDemandes] = useState<DemandeAPI[]>([]);
+  const [demandeReponses, setDemandeReponses] = useState<Record<string, DemandeReponseAPI[]>>({});
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [apiOrdonnances, setApiOrdonnances] = useState<OrdonnanceAPI[]>([]);
   const [patientName, setPatientName] = useState("");
   const [deliveryAddress, setDeliveryAddress] = useState("");
@@ -1998,7 +2000,14 @@ export function PatientSpace({ onLogout, userId }: Props) {
     patientsApi.getById(userId).then((p) => {
       setPatientName(`${p.prenom} ${p.nom}`);
     }).catch(() => {});
-    demandesApi.getByPatient(userId).then(setApiDemandes).catch(() => {});
+    demandesApi.getByPatient(userId).then((demandes) => {
+      setApiDemandes(demandes);
+      demandes.forEach((d) => {
+        demandesApi.getReponses(d.id)
+          .then((r) => setDemandeReponses((prev) => ({ ...prev, [d.id]: r })))
+          .catch(() => {});
+      });
+    }).catch(() => {});
     ordonnancesApi.getByPatient(userId).then(setApiOrdonnances).catch(() => {});
   }, [userId]);
 
@@ -2010,6 +2019,7 @@ export function PatientSpace({ onLogout, userId }: Props) {
 
     navigator.geolocation.getCurrentPosition(
       async ({ coords }) => {
+        setUserLocation({ lat: coords.latitude, lng: coords.longitude });
         try {
           const data = await pharmaciesApi.nearby(coords.latitude, coords.longitude);
           setPharmaciesApi(data.length > 0 ? data : await pharmaciesApi.list());
@@ -2073,8 +2083,23 @@ export function PatientSpace({ onLogout, userId }: Props) {
     setDemandeId(null);
     if (userId && q) {
       try {
-        const d = await demandesApi.create({ patientId: userId, type: "MEDICAMENT" });
+        const d = await demandesApi.create({
+          patientId: userId,
+          type: "MEDICAMENT",
+          medicamentRecherche: q,
+          latitude: userLocation?.lat,
+          longitude: userLocation?.lng,
+        });
         setDemandeId(d.id);
+        // Rafraîchir la liste des demandes et charger les réponses
+        demandesApi.getByPatient(userId).then((demandes) => {
+          setApiDemandes(demandes);
+          demandes.forEach((dem) => {
+            demandesApi.getReponses(dem.id)
+              .then((r) => setDemandeReponses((prev) => ({ ...prev, [dem.id]: r })))
+              .catch(() => {});
+          });
+        }).catch(() => {});
       } catch {}
     }
     setStep("pharmacies");
@@ -2223,13 +2248,13 @@ export function PatientSpace({ onLogout, userId }: Props) {
             className="flex items-center gap-2"
           >
             <div
-              className="w-9 h-9 rounded-2xl flex items-center justify-center text-white font-bold text-base"
+              className="w-9 h-9 rounded-2xl flex items-center justify-center text-white font-bold text-xs"
               style={{ backgroundColor: "#1A3072" }}
             >
-              L
+              DP
             </div>
             <span className="font-bold text-base" style={{ color: "#1A3072" }}>
-              LAHFIA
+              Digie-Pharma
             </span>
           </button>
 
@@ -2374,24 +2399,94 @@ export function PatientSpace({ onLogout, userId }: Props) {
 
       {/* ── Tab: Tableau de bord ── */}
       {tab === "dashboard" && (
-        <SuiviTab
-          orders={apiOrderDisplays}
-          prescriptions={apiPresDisplays}
-          patientName={patientName}
-          onOrderFromOrdonnance={async (drugs, ordonnanceId) => {
-            setItems(drugs);
-            setQuery(drugs[0] ?? "ordonnance");
-            setDemandeId(null);
-            if (userId) {
-              try {
-                const d = await demandesApi.create({ patientId: userId, type: "ORDONNANCE", ordonnanceId });
-                setDemandeId(d.id);
-              } catch {}
-            }
-            setTab("search");
-            setStep("pharmacies");
-          }}
-        />
+        <div>
+          {/* ── Mes demandes ── */}
+          {apiDemandes.length > 0 && (
+            <div className="px-4 pt-5 pb-2">
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">Mes demandes</p>
+              <div className="space-y-3">
+                {apiDemandes.slice(0, 5).map((d) => {
+                  const reponses = demandeReponses[d.id] ?? [];
+                  const repondues = reponses.filter((r) => r.reponse);
+                  const disponibles = repondues.filter((r) => r.reponse === "DISPONIBLE" || r.reponse === "PARTIEL");
+                  return (
+                    <div key={d.id} className="bg-white rounded-2xl border border-gray-100 p-4">
+                      <div className="flex items-start justify-between gap-2 mb-2">
+                        <div className="flex items-center gap-2">
+                          <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: "#EEF1F8" }}>
+                            <Pill className="w-4 h-4" style={{ color: "#1A3072" }} />
+                          </div>
+                          <div>
+                            <p className="text-sm font-semibold text-gray-900">
+                              {d.medicamentRecherche ?? (d.type === "ORDONNANCE" ? "Ordonnance" : "Médicament")}
+                            </p>
+                            <p className="text-xs text-gray-400">{new Date(d.createdAt).toLocaleDateString("fr-FR")}</p>
+                          </div>
+                        </div>
+                        <span className="text-[10px] px-2 py-1 rounded-full font-semibold shrink-0"
+                          style={repondues.length > 0
+                            ? { backgroundColor: "#DCFCE7", color: "#059669" }
+                            : { backgroundColor: "#FEF3C7", color: "#D97706" }
+                          }>
+                          {repondues.length > 0 ? `${repondues.length} réponse(s)` : "En attente"}
+                        </span>
+                      </div>
+                      {repondues.length > 0 ? (
+                        <div className="space-y-1.5">
+                          {repondues.map((r) => (
+                            <div key={r.id} className="flex items-center gap-2 px-3 py-2 rounded-xl bg-gray-50">
+                              <div className="w-2 h-2 rounded-full shrink-0"
+                                style={{ backgroundColor: r.reponse === "DISPONIBLE" ? "#10B981" : r.reponse === "PARTIEL" ? "#F59E0B" : "#EF4444" }} />
+                              <p className="text-xs font-medium text-gray-700 flex-1 truncate">{r.pharmacieNom ?? "Pharmacie"}</p>
+                              <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold shrink-0"
+                                style={r.reponse === "DISPONIBLE"
+                                  ? { backgroundColor: "#DCFCE7", color: "#059669" }
+                                  : r.reponse === "PARTIEL"
+                                  ? { backgroundColor: "#FEF3C7", color: "#D97706" }
+                                  : { backgroundColor: "#FEE2E2", color: "#EF4444" }
+                                }>
+                                {r.reponse === "DISPONIBLE" ? "Disponible" : r.reponse === "PARTIEL" ? "Partiel" : "Non dispo."}
+                              </span>
+                            </div>
+                          ))}
+                          {disponibles.length > 0 && (
+                            <button
+                              onClick={() => { setTab("search"); setStep("search"); }}
+                              className="w-full mt-1 py-2 rounded-xl text-white text-xs font-semibold"
+                              style={{ backgroundColor: "#1A3072" }}
+                            >
+                              Commander auprès d'une pharmacie →
+                            </button>
+                          )}
+                        </div>
+                      ) : (
+                        <p className="text-xs text-gray-400 text-center py-1">En attente des réponses des pharmacies…</p>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+          <SuiviTab
+            orders={apiOrderDisplays}
+            prescriptions={apiPresDisplays}
+            patientName={patientName}
+            onOrderFromOrdonnance={async (drugs, ordonnanceId) => {
+              setItems(drugs);
+              setQuery(drugs[0] ?? "ordonnance");
+              setDemandeId(null);
+              if (userId) {
+                try {
+                  const d = await demandesApi.create({ patientId: userId, type: "ORDONNANCE", ordonnanceId });
+                  setDemandeId(d.id);
+                } catch {}
+              }
+              setTab("search");
+              setStep("pharmacies");
+            }}
+          />
+        </div>
       )}
 
       {/* ── Tab: Rendez-vous ── */}
