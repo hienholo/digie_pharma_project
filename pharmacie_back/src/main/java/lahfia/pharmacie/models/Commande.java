@@ -49,6 +49,10 @@ public class Commande {
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
+    // Horodatage du passage à PRETE (colis préparé / prêt pour retrait ou remise au livreur)
+    @Column(name = "prete_at")
+    private LocalDateTime preteAt;
+
     @JsonManagedReference("commande-medicaments")
     @OneToMany(mappedBy = "commande", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<CommandeMedicament> medicaments;

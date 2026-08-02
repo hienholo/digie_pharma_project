@@ -14,10 +14,12 @@ import lahfia.pharmacie.enums.TypeDestinataire;
 import lahfia.pharmacie.enums.TypeEvenement;
 import lahfia.pharmacie.exception.ResourceNotFoundException;
 import lahfia.pharmacie.models.Commande;
+import lahfia.pharmacie.models.EvaluationLivreur;
 import lahfia.pharmacie.models.Livraison;
 import lahfia.pharmacie.models.Livreur;
 import lahfia.pharmacie.models.Patient;
 import lahfia.pharmacie.models.Pharmacie;
+import lahfia.pharmacie.repository.EvaluationLivreurRepository;
 import lahfia.pharmacie.repository.LivraisonRepository;
 import lombok.RequiredArgsConstructor;
 
@@ -25,8 +27,9 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class LivraisonService {
- 
+
     private final LivraisonRepository livraisonRepository;
+    private final EvaluationLivreurRepository evaluationLivreurRepository;
     private final LivreurService livreurService;
     private final NotificationService notificationService;
  
@@ -215,7 +218,40 @@ public class LivraisonService {
  
         return livraison;
     }
- 
+
+    /**
+     * Le patient note le livreur après une livraison confirmée (une seule évaluation par livraison).
+     */
+    @Transactional
+    public EvaluationLivreur evaluer(UUID livraisonId, UUID patientId, int note, String commentaire) {
+        Livraison livraison = findById(livraisonId);
+
+        if (livraison.getStatut() != StatutLivraison.LIVREE) {
+            throw new IllegalStateException("Cette livraison n'est pas encore terminée.");
+        }
+        if (livraison.getLivreur() == null) {
+            throw new IllegalStateException("Aucun livreur assigné à cette livraison.");
+        }
+        UUID proprietaire = livraison.getCommande().getDemande().getPatient().getId();
+        if (!proprietaire.equals(patientId)) {
+            throw new IllegalStateException("Cette livraison n'appartient pas à ce patient.");
+        }
+        if (evaluationLivreurRepository.findByLivraisonId(livraisonId).isPresent()) {
+            throw new IllegalStateException("Cette livraison a déjà été évaluée.");
+        }
+        if (note < 1 || note > 5) {
+            throw new IllegalArgumentException("La note doit être comprise entre 1 et 5.");
+        }
+
+        EvaluationLivreur evaluation = EvaluationLivreur.builder()
+                .livraison(livraison)
+                .livreur(livraison.getLivreur())
+                .note(note)
+                .commentaire(commentaire)
+                .build();
+        return evaluationLivreurRepository.save(evaluation);
+    }
+
     // ── Privé ──────────────────────────────────────────────────────────────────
  
     private void verifierLivreurAutorise(Livraison livraison, UUID livreurId) {

@@ -78,14 +78,14 @@ public class DemandeController {
     /**
      * POST /api/v1/demandes/{demandeId}/repondre
      * Appelé par la pharmacie.
-     * Body : { "pharmacieId", "reponse", "detailPartiel" (nullable) }
+     * Body : { "pharmacieId", "reponse", "detailPartiel" (nullable), "prix" (nullable, FCFA) }
      */
     @PostMapping("/{demandeId}/repondre")
     public ResponseEntity<DemandePharmacieReponse> repondre(
             @PathVariable UUID demandeId,
             @RequestBody RepondreRequest body) {
         return ResponseEntity.ok(
-                demandeService.repondre(demandeId, body.pharmacieId(), body.reponse(), body.detailPartiel())
+                demandeService.repondre(demandeId, body.pharmacieId(), body.reponse(), body.detailPartiel(), body.prix())
         );
     }
 
@@ -102,6 +102,7 @@ public class DemandeController {
     record RepondreRequest(
             UUID pharmacieId,
             Reponse reponse,
-            String detailPartiel
+            String detailPartiel,
+            Double prix
     ) {}
 }

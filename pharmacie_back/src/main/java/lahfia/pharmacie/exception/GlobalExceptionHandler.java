@@ -9,6 +9,7 @@ import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.transaction.TransactionSystemException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
 import java.util.Map;
@@ -54,6 +55,17 @@ public class GlobalExceptionHandler {
         }
         log.error("Erreur transaction : {}", cause.getMessage(), cause);
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(erreur("Données invalides."));
+    }
+
+    /**
+     * Erreurs explicitement levées avec un statut précis (ex : login invalide, 401).
+     * Sans ce handler, elles tombaient dans handleGeneric() et perdaient leur statut
+     * et leur message réel au profit d'un générique "Une erreur interne est survenue.".
+     */
+    @ExceptionHandler(ResponseStatusException.class)
+    public ResponseEntity<Map<String, Object>> handleResponseStatus(ResponseStatusException ex) {
+        return ResponseEntity.status(ex.getStatusCode())
+                .body(erreur(ex.getReason() != null ? ex.getReason() : "Requête invalide."));
     }
 
     /** JSON malformé ou champ attendu absent. */

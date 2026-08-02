@@ -8,10 +8,12 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import lahfia.pharmacie.models.EvaluationLivreur;
 import lahfia.pharmacie.models.Livraison;
 import lahfia.pharmacie.service.LivraisonService;
 import lombok.RequiredArgsConstructor;
@@ -108,6 +110,19 @@ public class LivraisonController {
         return ResponseEntity.ok(livraisonService.signalerEchec(id, body.livreurId(), body.note()));
     }
  
+    /**
+     * POST /api/v1/livraisons/{id}/evaluer
+     * Le patient note le livreur après une livraison terminée.
+     * Body : { "patientId": "...", "note": 5, "commentaire": "..." (nullable) }
+     */
+    @PostMapping("/{id}/evaluer")
+    public ResponseEntity<EvaluationLivreur> evaluer(
+            @PathVariable UUID id,
+            @RequestBody EvaluerRequest body) {
+        return ResponseEntity.ok(livraisonService.evaluer(id, body.patientId(), body.note(), body.commentaire()));
+    }
+
     record LivreurActionRequest(UUID livreurId) {}
     record ConfirmerRequest(UUID livreurId, String note) {}
+    record EvaluerRequest(UUID patientId, int note, String commentaire) {}
 }

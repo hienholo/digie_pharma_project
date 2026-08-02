@@ -17,5 +17,8 @@ public interface RappelMedicamentRepository extends JpaRepository<RappelMedicame
            "AND (r.recurrent = true OR r.dateRappel = :date) ORDER BY r.heure ASC")
     List<RappelMedicament> findJour(@Param("patientId") UUID patientId, @Param("date") LocalDate date);
 
-    List<RappelMedicament> findByPatientIdOrderByHeureAsc(UUID patientId);
+    // Requête explicite pour la même raison que findJour() ci-dessus : la dérivation
+    // automatique de "...PatientId..." entre en conflit avec RappelMedicament.getPatientId().
+    @Query("SELECT r FROM RappelMedicament r WHERE r.patient.id = :patientId ORDER BY r.heure ASC")
+    List<RappelMedicament> findByPatientIdOrderByHeureAsc(@Param("patientId") UUID patientId);
 }

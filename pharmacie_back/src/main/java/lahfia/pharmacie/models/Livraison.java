@@ -6,6 +6,7 @@ import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.time.LocalDateTime;
@@ -60,6 +61,10 @@ public class Livraison {
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
+    @JsonManagedReference("livraison-evaluation")
+    @OneToOne(mappedBy = "livraison", fetch = FetchType.LAZY)
+    private EvaluationLivreur evaluation;
+
     @JsonProperty("commandeId")
     public UUID getCommandeId() { return commande != null ? commande.getId() : null; }
 
@@ -74,4 +79,7 @@ public class Livraison {
 
     @JsonProperty("livreurTelephone")
     public String getLivreurTelephone() { return livreur != null ? livreur.getTelephone() : null; }
+
+    @JsonProperty("evaluationNote")
+    public Integer getEvaluationNote() { return evaluation != null ? evaluation.getNote() : null; }
 }

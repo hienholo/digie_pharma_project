@@ -50,6 +50,10 @@ public class DemandePharmacieReponse {
     @Column(name = "detail_partiel", length = 1000)
     private String detailPartiel;
 
+    // Prix indiqué par la pharmacie (FCFA), saisi si DISPONIBLE ou PARTIEL — null sinon
+    @Column(name = "prix")
+    private Double prix;
+
     @Column(name = "repondu_at")
     private LocalDateTime reponduAt;
 

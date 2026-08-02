@@ -113,7 +113,8 @@ public class DemandeService {
     @Transactional
     public DemandePharmacieReponse repondre(UUID demandeId, UUID pharmacieId,
                                              Reponse reponse,
-                                             String detailPartiel) {
+                                             String detailPartiel,
+                                             Double prix) {
         DemandePharmacieReponse entree = reponseRepository
                 .findByDemandeIdAndPharmacieId(demandeId, pharmacieId)
                 .orElseThrow(() -> new ResourceNotFoundException(
@@ -121,6 +122,7 @@ public class DemandeService {
 
         entree.setReponse(reponse);
         entree.setDetailPartiel(detailPartiel);
+        entree.setPrix(reponse == Reponse.NON_DISPONIBLE ? null : prix);
         entree.setReponduAt(LocalDateTime.now());
         reponseRepository.save(entree);
 

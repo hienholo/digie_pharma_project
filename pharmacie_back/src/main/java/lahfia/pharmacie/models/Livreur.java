@@ -22,6 +22,7 @@ import jakarta.persistence.Table;
 import lahfia.pharmacie.enums.DisponibiliteStatut;
 import lahfia.pharmacie.enums.StatutLivreur;
 import lahfia.pharmacie.enums.TypeAffiliation;
+import lahfia.pharmacie.enums.TypeVehicule;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -73,6 +74,14 @@ public class Livreur {
     private Double latitude;
     private Double longitude;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "type_vehicule")
+    private TypeVehicule typeVehicule;
+
+    @JsonManagedReference("livreur-evaluations")
+    @OneToMany(mappedBy = "livreur", fetch = FetchType.LAZY)
+    private List<EvaluationLivreur> evaluations;
+
     @JsonProperty(value = "password", access = JsonProperty.Access.WRITE_ONLY)
     @Column(name = "password_hash")
     private String passwordHash;
@@ -84,5 +93,16 @@ public class Livreur {
     @JsonManagedReference("livreur-livraisons")
     @OneToMany(mappedBy = "livreur", fetch = FetchType.LAZY)
     private List<Livraison> livraisons;
+
+    @JsonProperty("noteMoyenne")
+    public Double getNoteMoyenne() {
+        if (evaluations == null || evaluations.isEmpty()) return null;
+        return evaluations.stream().mapToInt(EvaluationLivreur::getNote).average().orElse(0);
+    }
+
+    @JsonProperty("nbEvaluations")
+    public int getNbEvaluations() {
+        return evaluations != null ? evaluations.size() : 0;
+    }
 }
  

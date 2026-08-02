@@ -54,7 +54,10 @@ public class WebSecurityConfig {
         "https://digie-pharma.com",
         "http://digie-pharma.com",
         "http://localhost:5173",
-        "http://localhost:3000"
+        "http://localhost:3000",
+        // Test depuis un téléphone sur le même réseau local (adresse LAN du poste de dev)
+        "http://192.168.1.85:5173",
+        "http://192.168.1.85:3000"
         ));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("*"));

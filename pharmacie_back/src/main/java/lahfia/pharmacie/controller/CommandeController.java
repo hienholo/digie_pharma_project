@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import lahfia.pharmacie.dto.CommandePatientDTO;
 import lahfia.pharmacie.dto.CommandePharmacieDTO;
 import lahfia.pharmacie.enums.ModeObtention;
 import lahfia.pharmacie.enums.ModePaiement;
@@ -40,6 +41,15 @@ public class CommandeController {
     @GetMapping("/pharmacie/{pharmacieId}/detail")
     public ResponseEntity<List<CommandePharmacieDTO>> getByPharmacieDetail(@PathVariable UUID pharmacieId) {
         return ResponseEntity.ok(commandeService.findByPharmacieDto(pharmacieId));
+    }
+
+    /**
+     * GET /api/v1/commandes/patient/{patientId}
+     * Historique des commandes du patient, enrichi pour l'écran "Mes commandes" (timeline, livreur).
+     */
+    @GetMapping("/patient/{patientId}")
+    public ResponseEntity<List<CommandePatientDTO>> getByPatient(@PathVariable UUID patientId) {
+        return ResponseEntity.ok(commandeService.findByPatientDto(patientId));
     }
 
     /**
