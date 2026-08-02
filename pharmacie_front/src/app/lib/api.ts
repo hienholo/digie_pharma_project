@@ -5,7 +5,7 @@ import type {
   PatientAPI, PharmacieAPI, OrdonnanceAPI, MedicamentAPI,
   MedecinAPI, OrdonnanceNumeriqueAPI, RendezVousAPI,
   DemandeAPI, DemandeReponseAPI, DemandeEnAttenteAPI,
-  CommandeAPI, CommandePharmacieAPI, LivraisonAPI, NotificationAPI,
+  CommandeAPI, CommandePharmacieAPI, CommandePatientAPI, LivraisonAPI, NotificationAPI,
   LoginResponse, RappelAPI,
 } from "./types";
 
@@ -185,10 +185,10 @@ export const demandesApi = {
     http<DemandeEnAttenteAPI[]>(`/demandes/pharmacie/${pharmacieId}/en-attente`),
 
   // La pharmacie répond : DISPONIBLE | NON_DISPONIBLE | PARTIEL
-  repondre: (demandeId: string, pharmacieId: string, reponse: "DISPONIBLE" | "NON_DISPONIBLE" | "PARTIEL", detailPartiel?: string) =>
+  repondre: (demandeId: string, pharmacieId: string, reponse: "DISPONIBLE" | "NON_DISPONIBLE" | "PARTIEL", detailPartiel?: string, prix?: number) =>
     http<DemandeReponseAPI>(`/demandes/${demandeId}/repondre`, {
       method: "POST",
-      body: JSON.stringify({ pharmacieId, reponse, detailPartiel: detailPartiel ?? null }),
+      body: JSON.stringify({ pharmacieId, reponse, detailPartiel: detailPartiel ?? null, prix: prix ?? null }),
     }),
 
   create: (payload: CreateDemandePayload) =>
@@ -210,6 +210,10 @@ export const commandesApi = {
   // Commandes enrichies avec infos patient (côté pharmacie)
   getByPharmacieDetail: (pharmacieId: string) =>
     http<CommandePharmacieAPI[]>(`/commandes/pharmacie/${pharmacieId}/detail`),
+
+  // Commandes enrichies pour l'écran "Mes commandes" (côté patient)
+  getByPatient: (patientId: string) =>
+    http<CommandePatientAPI[]>(`/commandes/patient/${patientId}`),
 
   marquerPrete: (id: string) =>
     http<CommandeAPI>(`/commandes/${id}/prete`, { method: "PATCH" }),
@@ -268,6 +272,13 @@ export const livraisonsApi = {
     http<LivraisonAPI>(`/livraisons/${id}/confirmer`, {
       method: "PATCH",
       body: JSON.stringify({ livreurId, note }),
+    }),
+
+  // Le patient note le livreur après une livraison terminée (une seule fois)
+  evaluer: (id: string, patientId: string, note: number, commentaire?: string) =>
+    http<{ id: string; note: number; commentaire?: string }>(`/livraisons/${id}/evaluer`, {
+      method: "POST",
+      body: JSON.stringify({ patientId, note, commentaire: commentaire ?? null }),
     }),
 };
 

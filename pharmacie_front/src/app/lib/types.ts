@@ -160,6 +160,7 @@ export interface DemandeReponseAPI {
   pharmacieTelephone?: string;
   reponse: "DISPONIBLE" | "NON_DISPONIBLE" | "PARTIEL" | null;
   detailPartiel?: string;
+  prix?: number;
   reponduAt?: string;
 }
 
@@ -196,6 +197,37 @@ export interface CommandePharmacieAPI {
   patientPrenom: string;
   patientNom: string;
   medicamentNoms: string[];
+}
+
+// Vue enrichie d'une commande pour l'écran "Mes commandes" côté patient (liste + timeline détaillée)
+export interface CommandePatientAPI {
+  id: string;
+  statut: "EN_PREPARATION" | "PRETE" | "EN_LIVRAISON" | "TERMINEE" | "ANNULEE";
+  modeObtention: "LIVRAISON" | "RETRAIT";
+  modePaiement?: "A_LA_LIVRAISON" | "EN_LIGNE";
+  createdAt: string;
+  preteAt?: string;
+  pharmacieNom: string;
+  pharmacieAdresse: string;
+  medicamentNoms: string[];
+  demandeCreatedAt: string;
+  nbPharmaciesContactees: number;
+  reponseConfirmeeAt?: string;
+  reponseType?: "DISPONIBLE" | "PARTIEL" | "NON_DISPONIBLE";
+  prix?: number;
+  livraisonId?: string;
+  livraisonStatut?: "EN_ATTENTE_LIVREUR" | "ASSIGNEE" | "EN_COURS" | "LIVREE" | "ECHEC";
+  livraisonAssigneeAt?: string;
+  livraisonPriseEnChargeAt?: string;
+  livraisonLivreeAt?: string;
+  livreurNom?: string;
+  livreurPrenom?: string;
+  livreurTelephone?: string;
+  livreurLatitude?: number;
+  livreurLongitude?: number;
+  livreurTypeVehicule?: "MOTO" | "VOITURE" | "VELO" | "TRICYCLE";
+  livreurNoteMoyenne?: number;
+  evaluationNote?: number;
 }
 
 export interface LivraisonAPI {

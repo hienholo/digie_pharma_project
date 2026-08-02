@@ -1,13 +1,17 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
-  Package, MapPin, Clock, CheckCircle, Navigation, LogOut,
+  Package, Clock, CheckCircle, Navigation, LogOut,
   Home, User, Truck, ChevronRight, Settings, HelpCircle,
-  Shield, Star, RefreshCw, Bell,
+  Shield, Star, RefreshCw, Bell, Volume2, VolumeX,
 } from "lucide-react";
 import { livraisonsApi, livreursApi, session } from "../lib/api";
 import type { LivraisonAPI, LivreurAPI } from "../lib/types";
+import { useLiveAlerts, requestNotificationPermission } from "../lib/useLiveAlerts";
+import { NotificationToast } from "./NotificationToast";
+import { DeliveryRouteMap } from "./DeliveryRouteMap";
 
-type DeliveryTab = "home" | "disponibles" | "mesCourses" | "profile";
+type DeliveryTab = "home" | "livraisons" | "notifications" | "profile";
+type LivraisonsSubTab = "disponibles" | "mesCourses";
 
 type Props = { onLogout?: () => void };
 
@@ -30,12 +34,12 @@ const STATUT_COLOR: Record<LivraisonAPI["statut"], string> = {
 // ── Navigation ─────────────────────────────────────────────────────────────────
 
 function DeliveryNav({
-  tab, disponiblesCount, activeCount, onTab,
-}: { tab: DeliveryTab; disponiblesCount: number; activeCount: number; onTab: (t: DeliveryTab) => void }) {
+  tab, disponiblesCount, unreadNotifCount, onTab,
+}: { tab: DeliveryTab; disponiblesCount: number; unreadNotifCount: number; onTab: (t: DeliveryTab) => void }) {
   const tabs = [
     { key: "home" as const, icon: Home, label: "Accueil" },
-    { key: "disponibles" as const, icon: Bell, label: "Disponibles", badge: disponiblesCount },
-    { key: "mesCourses" as const, icon: Truck, label: "Mes courses", badge: activeCount },
+    { key: "livraisons" as const, icon: Truck, label: "Livraisons", badge: disponiblesCount },
+    { key: "notifications" as const, icon: Bell, label: "Notifications", badge: unreadNotifCount },
     { key: "profile" as const, icon: User, label: "Profil" },
   ];
   return (
@@ -64,12 +68,12 @@ function DeliveryNav({
 }
 
 function DeliverySidebarNav({
-  tab, disponiblesCount, activeCount, onTab, onLogout,
-}: { tab: DeliveryTab; disponiblesCount: number; activeCount: number; onTab: (t: DeliveryTab) => void; onLogout?: () => void }) {
+  tab, disponiblesCount, unreadNotifCount, onTab, onLogout,
+}: { tab: DeliveryTab; disponiblesCount: number; unreadNotifCount: number; onTab: (t: DeliveryTab) => void; onLogout?: () => void }) {
   const tabs = [
     { key: "home" as const, icon: Home, label: "Accueil" },
-    { key: "disponibles" as const, icon: Bell, label: "Disponibles", badge: disponiblesCount },
-    { key: "mesCourses" as const, icon: Truck, label: "Mes courses", badge: activeCount },
+    { key: "livraisons" as const, icon: Truck, label: "Livraisons", badge: disponiblesCount },
+    { key: "notifications" as const, icon: Bell, label: "Notifications", badge: unreadNotifCount },
     { key: "profile" as const, icon: User, label: "Profil" },
   ];
   return (
@@ -117,6 +121,8 @@ function DeliverySidebarNav({
 function DeliveryHomeTab({
   mesCourses, disponibles, onGoDisponibles, onGoMesCourses,
 }: { mesCourses: LivraisonAPI[]; disponibles: LivraisonAPI[]; onGoDisponibles: () => void; onGoMesCourses: () => void }) {
+  // onGoDisponibles / onGoMesCourses pointent toutes deux vers l'onglet "Livraisons",
+  // avec le sous-onglet correspondant déjà sélectionné par le parent.
   const active = mesCourses.filter((l) => l.statut === "ASSIGNEE" || l.statut === "EN_COURS");
   const done   = mesCourses.filter((l) => l.statut === "LIVREE").length;
 
@@ -208,6 +214,32 @@ function DeliveryHomeTab({
   );
 }
 
+// ── Données mock complémentaires pour les fiches livraison ─────────────────────
+
+const PHARMACIES_MOCK = [
+  { nom: "Pharmacie Moha", adresse: "Angré Petro Ivoire, Abidjan" },
+  { nom: "Pharmacie du Plateau", adresse: "Avenue Noguès, Plateau" },
+  { nom: "Pharmacie Sainte Marie", adresse: "Cocody Angré 8ème Tranche" },
+];
+const PATIENTS_MOCK = [
+  { nom: "Mohamed Diallo", telephone: "07 XX XX XX XX" },
+  { nom: "Koffi Assi", telephone: "05 XX XX XX XX" },
+  { nom: "Aminata Traoré", telephone: "01 XX XX XX XX" },
+];
+function getMockExtra(id: string) {
+  const idx = id.charCodeAt(id.length - 1) % 3;
+  const distKm = ((id.charCodeAt(0) % 30 + 10) / 10).toFixed(1);
+  const gainFCFA = Math.round((parseFloat(distKm) * 400 + 700) / 100) * 100;
+  const tempsMins = Math.round(parseFloat(distKm) * 4 + 8);
+  return {
+    pharmacie: PHARMACIES_MOCK[idx],
+    patient: PATIENTS_MOCK[idx],
+    distKm,
+    gainFCFA,
+    tempsMins,
+  };
+}
+
 // ── Disponibles tab ─────────────────────────────────────────────────────────────
 
 function DisponiblesTab({
@@ -245,45 +277,87 @@ function DisponiblesTab({
           <p className="text-xs text-gray-400 mt-1">Revenez plus tard ou actualisez</p>
         </div>
       ) : (
-        disponibles.map((l) => (
-          <div key={l.id} className="bg-white rounded-2xl p-4 border border-gray-200">
-            {/* En-tête */}
-            <div className="flex items-start justify-between mb-3">
-              <div>
-                <p className="text-sm font-semibold text-gray-900">Commande #{l.commandeId?.slice(-8) ?? l.id.slice(-8)}</p>
-                <p className="text-xs text-gray-400 mt-0.5">Livraison #{l.id.slice(-8)}</p>
+        disponibles.map((l) => {
+          const extra = getMockExtra(l.id);
+          const ref = `#${l.commandeId?.slice(-8).toUpperCase() ?? l.id.slice(-8).toUpperCase()}`;
+          return (
+            <div key={l.id} className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+              {/* En-tête */}
+              <div className="flex items-center justify-between px-4 py-3 border-b border-gray-50">
+                <div>
+                  <p className="text-sm font-bold text-gray-900">Commande {ref}</p>
+                  <p className="text-xs text-gray-400">Livraison #{l.id.slice(-8)}</p>
+                </div>
+                <span className="px-2.5 py-1 rounded-full text-xs text-white font-semibold" style={{ backgroundColor: "#10B981" }}>
+                  Disponible
+                </span>
               </div>
-              <span className="px-2.5 py-1 rounded-full text-xs text-white font-medium" style={{ backgroundColor: "#F47920" }}>
-                Disponible
-              </span>
-            </div>
 
-            {/* Adresse */}
-            <div className="flex items-start gap-2 mb-3 text-sm text-gray-700">
-              <MapPin className="w-4 h-4 text-gray-400 mt-0.5 shrink-0" />
-              <span>{l.adresseLivraison ?? "Adresse non disponible"}</span>
-            </div>
+              <div className="px-4 py-3 space-y-2.5">
+                {/* Pharmacie de récupération */}
+                <div>
+                  <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide mb-1">Pharmacie de récupération</p>
+                  <div className="flex items-center gap-2">
+                    <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0" style={{ backgroundColor: "#EEF1F8" }}>
+                      <Package className="w-3.5 h-3.5" style={{ color: "#1A3072" }} />
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-gray-900">{extra.pharmacie.nom}</p>
+                      <p className="text-xs text-gray-500">{extra.pharmacie.adresse}</p>
+                    </div>
+                  </div>
+                </div>
 
-            {/* Date */}
-            {l.createdAt && (
-              <div className="flex items-center gap-2 mb-4 text-xs text-gray-400">
-                <Clock className="w-3.5 h-3.5" />
-                Commandé le {new Date(l.createdAt).toLocaleString("fr-FR", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+                {/* Adresse de livraison */}
+                <div>
+                  <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide mb-1">Adresse de livraison</p>
+                  <DeliveryRouteMap adresseLivraison={l.adresseLivraison} pharmacieLabel={extra.pharmacie.nom} />
+                </div>
+
+                {/* Patient */}
+                <div>
+                  <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide mb-1">Patient</p>
+                  <div className="flex items-center gap-2">
+                    <div className="w-7 h-7 rounded-full flex items-center justify-center text-white font-bold text-xs shrink-0" style={{ backgroundColor: "#1A3072" }}>
+                      {extra.patient.nom.charAt(0)}
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">{extra.patient.nom}</p>
+                      <p className="text-xs text-gray-500">{extra.patient.telephone}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Stats : distance / temps / gain */}
+                <div className="grid grid-cols-3 gap-2 pt-1">
+                  <div className="text-center p-2.5 rounded-xl bg-gray-50">
+                    <p className="text-base font-bold text-gray-900">{extra.distKm} km</p>
+                    <p className="text-[10px] text-gray-500 mt-0.5">Distance</p>
+                  </div>
+                  <div className="text-center p-2.5 rounded-xl bg-gray-50">
+                    <p className="text-base font-bold text-gray-900">{extra.tempsMins} min</p>
+                    <p className="text-[10px] text-gray-500 mt-0.5">Temps estimé</p>
+                  </div>
+                  <div className="text-center p-2.5 rounded-xl" style={{ backgroundColor: "#EEF1F8" }}>
+                    <p className="text-base font-bold" style={{ color: "#1A3072" }}>{extra.gainFCFA.toLocaleString("fr-FR")} F</p>
+                    <p className="text-[10px] mt-0.5" style={{ color: "#1A3072" }}>Gain estimé</p>
+                  </div>
+                </div>
+
+                {/* Bouton se proposer */}
+                <button
+                  onClick={() => handleProposer(l.id)}
+                  disabled={proposing === l.id}
+                  className="w-full py-3 rounded-xl text-white text-sm font-bold flex items-center justify-center gap-2 disabled:opacity-60 transition mt-1"
+                  style={{ backgroundColor: "#1A3072" }}
+                >
+                  <Truck className="w-4 h-4" />
+                  {proposing === l.id ? "Envoi en cours…" : "Me proposer pour cette livraison"}
+                </button>
               </div>
-            )}
-
-            {/* Bouton se proposer */}
-            <button
-              onClick={() => handleProposer(l.id)}
-              disabled={proposing === l.id}
-              className="w-full py-2.5 rounded-xl text-white text-sm font-medium flex items-center justify-center gap-2 disabled:opacity-60 transition"
-              style={{ backgroundColor: "#1A3072" }}
-            >
-              <Truck className="w-4 h-4" />
-              {proposing === l.id ? "Envoi…" : "Me proposer pour cette livraison"}
-            </button>
-          </div>
-        ))
+            </div>
+          );
+        })
       )}
     </div>
   );
@@ -320,7 +394,9 @@ function MesCoursesTab({
         </div>
       )}
 
-      {active.map((l) => (
+      {active.map((l) => {
+        const extra = getMockExtra(l.id);
+        return (
         <div key={l.id} className="bg-white rounded-2xl p-4 border border-gray-200">
           <div className="flex items-start justify-between mb-3">
             <div>
@@ -355,9 +431,8 @@ function MesCoursesTab({
             <span>Livrée</span>
           </div>
 
-          <div className="flex items-start gap-2 mb-3 text-sm text-gray-700">
-            <MapPin className="w-4 h-4 text-gray-400 mt-0.5 shrink-0" />
-            <span>{l.adresseLivraison ?? "Adresse non disponible"}</span>
+          <div className="mb-3">
+            <DeliveryRouteMap adresseLivraison={l.adresseLivraison} pharmacieLabel={extra.pharmacie.nom} />
           </div>
 
           {l.assigneeAt && (
@@ -383,7 +458,8 @@ function MesCoursesTab({
             </button>
           )}
         </div>
-      ))}
+        );
+      })}
 
       {history.length > 0 && (
         <div className="mt-2">
@@ -413,11 +489,137 @@ function MesCoursesTab({
   );
 }
 
+// ── Livraisons tab (Disponibles + Mes courses regroupées) ───────────────────────
+
+function LivraisonsTab({
+  subTab, onSubTab, disponibles, mesCourses, loading, onRefresh, onSeProposer, onPrendreEnCharge, onConfirmer,
+}: {
+  subTab: LivraisonsSubTab;
+  onSubTab: (t: LivraisonsSubTab) => void;
+  disponibles: LivraisonAPI[];
+  mesCourses: LivraisonAPI[];
+  loading: boolean;
+  onRefresh: () => void;
+  onSeProposer: (id: string) => Promise<void>;
+  onPrendreEnCharge: (id: string) => Promise<void>;
+  onConfirmer: (id: string) => Promise<void>;
+}) {
+  const activeCount = mesCourses.filter((l) => l.statut === "ASSIGNEE" || l.statut === "EN_COURS").length;
+  return (
+    <div className="flex flex-col h-full">
+      <div className="px-4 pt-4">
+        <div className="flex gap-1 bg-gray-100 p-1 rounded-2xl">
+          {([
+            { key: "disponibles" as const, label: "Disponibles", badge: disponibles.length },
+            { key: "mesCourses" as const, label: "Mes courses", badge: activeCount },
+          ]).map(({ key, label, badge }) => (
+            <button
+              key={key}
+              onClick={() => onSubTab(key)}
+              className="flex-1 relative py-2 px-1 rounded-xl text-xs font-semibold transition-all"
+              style={{
+                backgroundColor: subTab === key ? "white" : "transparent",
+                color: subTab === key ? "#1A3072" : "#6B7280",
+                boxShadow: subTab === key ? "0 1px 4px rgba(0,0,0,0.12)" : "none",
+              }}
+            >
+              {label}
+              {badge > 0 && (
+                <span className="ml-1 px-1.5 py-0.5 rounded-full text-white font-bold" style={{ fontSize: "9px", backgroundColor: "#F47920" }}>
+                  {badge}
+                </span>
+              )}
+            </button>
+          ))}
+        </div>
+      </div>
+      {subTab === "disponibles" ? (
+        <DisponiblesTab disponibles={disponibles} loading={loading} onRefresh={onRefresh} onSeProposer={onSeProposer} />
+      ) : (
+        <MesCoursesTab livraisons={mesCourses} loading={loading} onRefresh={onRefresh} onPrendreEnCharge={onPrendreEnCharge} onConfirmer={onConfirmer} />
+      )}
+    </div>
+  );
+}
+
+// ── Notifications tab (journal d'activité livraisons) ────────────────────────────
+
+type ActivityType = "disponible" | "acceptee" | "terminee";
+type ActivityItem = { id: string; type: ActivityType; time: string; ref: string };
+
+const ACTIVITY_CONFIG: Record<ActivityType, { label: string; icon: typeof Bell; color: string; bg: string }> = {
+  disponible: { label: "Nouvelle livraison disponible", icon: Bell,        color: "#F47920", bg: "#FFF3E6" },
+  acceptee:   { label: "Livraison acceptée",             icon: Truck,       color: "#1A3072", bg: "#EEF1F8" },
+  terminee:   { label: "Livraison terminée",             icon: CheckCircle, color: "#10B981", bg: "#ECFDF5" },
+};
+
+function buildActivityFeed(disponibles: LivraisonAPI[], mesCourses: LivraisonAPI[]): ActivityItem[] {
+  const items: ActivityItem[] = [];
+  disponibles.forEach((l) => {
+    if (l.createdAt) items.push({ id: `dispo-${l.id}`, type: "disponible", time: l.createdAt, ref: l.commandeId ?? l.id });
+  });
+  mesCourses.forEach((l) => {
+    if (l.assigneeAt) items.push({ id: `accept-${l.id}`, type: "acceptee", time: l.assigneeAt, ref: l.commandeId ?? l.id });
+    if (l.livreeAt) items.push({ id: `done-${l.id}`, type: "terminee", time: l.livreeAt, ref: l.commandeId ?? l.id });
+  });
+  return items.sort((a, b) => b.time.localeCompare(a.time));
+}
+
+function formatRelative(iso: string) {
+  const diff = Date.now() - new Date(iso).getTime();
+  const minutes = Math.floor(diff / 60000);
+  if (minutes < 1) return "À l'instant";
+  if (minutes < 60) return `Il y a ${minutes} min`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `Il y a ${hours}h`;
+  return new Date(iso).toLocaleDateString("fr-FR");
+}
+
+function NotificationsTab({
+  disponibles, mesCourses, onGoLivraisons,
+}: { disponibles: LivraisonAPI[]; mesCourses: LivraisonAPI[]; onGoLivraisons: (sub: LivraisonsSubTab) => void }) {
+  const feed = buildActivityFeed(disponibles, mesCourses).slice(0, 30);
+
+  if (feed.length === 0) {
+    return (
+      <div className="px-4 py-12 text-center">
+        <Bell className="w-10 h-10 text-gray-300 mx-auto mb-3" />
+        <p className="text-gray-500 text-sm">Aucune notification pour le moment.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="px-4 py-4 space-y-2">
+      {feed.map((item) => {
+        const cfg = ACTIVITY_CONFIG[item.type];
+        const Icon = cfg.icon;
+        return (
+          <button
+            key={item.id}
+            onClick={() => onGoLivraisons(item.type === "disponible" ? "disponibles" : "mesCourses")}
+            className="w-full text-left bg-white rounded-2xl border border-gray-100 p-3.5 flex items-start gap-3 hover:border-gray-200 transition"
+          >
+            <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: cfg.bg }}>
+              <Icon className="w-4 h-4" style={{ color: cfg.color }} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-gray-900">{cfg.label}</p>
+              <p className="text-xs text-gray-500 mt-0.5">Commande #{item.ref.slice(-8).toUpperCase()}</p>
+              <p className="text-[11px] text-gray-400 mt-1">{formatRelative(item.time)}</p>
+            </div>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 // ── Profile tab ─────────────────────────────────────────────────────────────────
 
 function DeliveryProfileTab({
-  onLogout, livreur, toggling, onToggle,
-}: { onLogout?: () => void; livreur: LivreurAPI | null; toggling: boolean; onToggle: () => void }) {
+  onLogout, livreur, toggling, onToggle, soundEnabled, onToggleSound,
+}: { onLogout?: () => void; livreur: LivreurAPI | null; toggling: boolean; onToggle: () => void; soundEnabled: boolean; onToggleSound: (v: boolean) => void }) {
   return (
     <div className="px-4 py-4 space-y-4 pb-6">
       <div className="bg-white rounded-2xl border border-gray-100 p-5">
@@ -472,6 +674,26 @@ function DeliveryProfileTab({
             : livreur?.disponibiliteStatut === "EN_COURSE" ? "● En course"
             : "● Hors ligne"}
         </p>
+      </div>
+
+      {/* Signal sonore */}
+      <div className="bg-white rounded-2xl border border-gray-100 p-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            {soundEnabled ? <Volume2 className="w-4 h-4 text-gray-400" /> : <VolumeX className="w-4 h-4 text-gray-400" />}
+            <div>
+              <p className="text-sm font-semibold text-gray-900">Signal sonore</p>
+              <p className="text-xs text-gray-400 mt-0.5">Jouer un son pour chaque nouvelle livraison disponible</p>
+            </div>
+          </div>
+          <button
+            onClick={() => onToggleSound(!soundEnabled)}
+            className="relative w-10 h-6 rounded-full transition-colors shrink-0"
+            style={{ backgroundColor: soundEnabled ? "#1A3072" : "#D1D5DB" }}
+          >
+            <span className="absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-all" style={{ left: soundEnabled ? "22px" : "2px" }} />
+          </button>
+        </div>
       </div>
 
       <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
@@ -536,6 +758,7 @@ function DisponibiliteToggle({
 
 export function DeliveryDashboard({ onLogout }: Props) {
   const [tab, setTab] = useState<DeliveryTab>("home");
+  const [livSubTab, setLivSubTab] = useState<LivraisonsSubTab>("disponibles");
   const livreurId = session.getUserId();
 
   const [livreur, setLivreur] = useState<LivreurAPI | null>(null);
@@ -544,6 +767,35 @@ export function DeliveryDashboard({ onLogout }: Props) {
   const [loading, setLoading] = useState(false);
   const [toggling, setToggling] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
+
+  const goLivraisons = (sub: LivraisonsSubTab) => { setLivSubTab(sub); setTab("livraisons"); };
+
+  // Badge "Notifications" : compte les événements plus récents que la dernière consultation
+  // de l'onglet (partagé via localStorage entre les deux instances mobile/desktop montées en parallèle).
+  const [notifLastSeen, setNotifLastSeen] = useState<number>(() => {
+    try { return parseInt(localStorage.getItem("delivery_notif_last_seen") ?? "0", 10) || 0; } catch { return 0; }
+  });
+  useEffect(() => {
+    if (tab !== "notifications") return;
+    const now = Date.now();
+    setNotifLastSeen(now);
+    try { localStorage.setItem("delivery_notif_last_seen", String(now)); } catch { /* ignore */ }
+  }, [tab]);
+  const unreadNotifCount = buildActivityFeed(disponibles, mesCourses)
+    .filter((i) => new Date(i.time).getTime() > notifLastSeen).length;
+
+  const pollDisponibles = useCallback(
+    () => (livreurId ? livraisonsApi.getEnAttente() : Promise.resolve([])),
+    [livreurId],
+  );
+  const alerts = useLiveAlerts({
+    storageKey: "delivery",
+    poll: pollDisponibles,
+    getId: (l) => l.id,
+    enabled: !!livreurId,
+  });
+
+  useEffect(() => { requestNotificationPermission(); }, []);
 
   const load = () => {
     if (!livreurId) return;
@@ -585,7 +837,7 @@ export function DeliveryDashboard({ onLogout }: Props) {
       const updated = await livraisonsApi.seProposer(id, livreurId);
       setDisponibles((prev) => prev.filter((l) => l.id !== id));
       setMesCourses((prev) => [updated, ...prev]);
-      setTab("mesCourses");
+      goLivraisons("mesCourses");
     } catch (e) {
       setActionError(e instanceof Error ? e.message : "Erreur");
     }
@@ -611,11 +863,9 @@ export function DeliveryDashboard({ onLogout }: Props) {
     }
   };
 
-  const activeCount = mesCourses.filter((l) => l.statut === "ASSIGNEE" || l.statut === "EN_COURS").length;
-
   return (
     <div className="flex-1 flex overflow-hidden" style={{ backgroundColor: "#F3F4F6" }}>
-      <DeliverySidebarNav tab={tab} disponiblesCount={disponibles.length} activeCount={activeCount} onTab={setTab} onLogout={onLogout} />
+      <DeliverySidebarNav tab={tab} disponiblesCount={disponibles.length} unreadNotifCount={unreadNotifCount} onTab={setTab} onLogout={onLogout} />
 
       <div className="flex-1 flex flex-col overflow-hidden min-w-0">
         <header className="shrink-0 bg-white border-b border-gray-200 lg:hidden">
@@ -642,8 +892,8 @@ export function DeliveryDashboard({ onLogout }: Props) {
         <header className="hidden lg:flex shrink-0 bg-white border-b border-gray-200 items-center justify-between px-6 py-3">
           <h1 className="font-bold text-gray-900 text-lg">
             {tab === "home" && "Tableau de bord"}
-            {tab === "disponibles" && "Livraisons disponibles"}
-            {tab === "mesCourses" && "Mes courses"}
+            {tab === "livraisons" && "Livraisons"}
+            {tab === "notifications" && "Notifications"}
             {tab === "profile" && "Mon profil"}
           </h1>
           <DisponibiliteToggle statut={livreur?.disponibiliteStatut} loading={toggling} onToggle={handleToggleDisponibilite} />
@@ -658,32 +908,47 @@ export function DeliveryDashboard({ onLogout }: Props) {
             <DeliveryHomeTab
               mesCourses={mesCourses}
               disponibles={disponibles}
-              onGoDisponibles={() => setTab("disponibles")}
-              onGoMesCourses={() => setTab("mesCourses")}
+              onGoDisponibles={() => goLivraisons("disponibles")}
+              onGoMesCourses={() => goLivraisons("mesCourses")}
             />
           )}
-          {tab === "disponibles" && (
-            <DisponiblesTab
+          {tab === "livraisons" && (
+            <LivraisonsTab
+              subTab={livSubTab}
+              onSubTab={setLivSubTab}
               disponibles={disponibles}
+              mesCourses={mesCourses}
               loading={loading}
               onRefresh={load}
               onSeProposer={handleSeProposer}
-            />
-          )}
-          {tab === "mesCourses" && (
-            <MesCoursesTab
-              livraisons={mesCourses}
-              loading={loading}
-              onRefresh={load}
               onPrendreEnCharge={handlePrendreEnCharge}
               onConfirmer={handleConfirmer}
             />
           )}
-          {tab === "profile" && <DeliveryProfileTab onLogout={onLogout} livreur={livreur} toggling={toggling} onToggle={handleToggleDisponibilite} />}
+          {tab === "notifications" && (
+            <NotificationsTab disponibles={disponibles} mesCourses={mesCourses} onGoLivraisons={goLivraisons} />
+          )}
+          {tab === "profile" && (
+            <DeliveryProfileTab
+              onLogout={onLogout} livreur={livreur} toggling={toggling} onToggle={handleToggleDisponibilite}
+              soundEnabled={alerts.soundEnabled} onToggleSound={alerts.setSoundEnabled}
+            />
+          )}
         </div>
 
-        <DeliveryNav tab={tab} disponiblesCount={disponibles.length} activeCount={activeCount} onTab={setTab} />
+        <DeliveryNav tab={tab} disponiblesCount={disponibles.length} unreadNotifCount={unreadNotifCount} onTab={setTab} />
       </div>
+
+      {alerts.newItem && (
+        <NotificationToast
+          icon={Bell}
+          color="#F47920"
+          title="Nouvelle livraison disponible"
+          message={`Commande #${alerts.newItem.commandeId?.slice(-8).toUpperCase() ?? alerts.newItem.id.slice(-8).toUpperCase()} en attente d'un livreur.`}
+          onView={() => { goLivraisons("disponibles"); load(); alerts.dismissNew(); }}
+          onDismiss={alerts.dismissNew}
+        />
+      )}
     </div>
   );
 }

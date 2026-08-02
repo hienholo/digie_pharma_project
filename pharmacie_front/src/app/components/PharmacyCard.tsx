@@ -11,6 +11,8 @@ export type Pharmacy = {
   pickup: boolean;
   eta?: string;
   available: "in-stock" | "partial" | "unknown";
+  // Prix réel indiqué par la pharmacie en répondant à la demande (absent si pas encore répondu)
+  prix?: number;
 };
 
 type Props = {

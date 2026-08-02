@@ -1,14 +1,34 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   LogOut, Users, Calendar, FileText, Plus, ChevronRight,
-  Home, Menu, X, Bell, User, Settings, HelpCircle,
+  Home, Menu, X, Bell, User, Settings, HelpCircle, CheckCircle, Inbox,
 } from "lucide-react";
-import type { MedecinAPI, PatientAPI, OrdonnanceNumeriqueAPI } from "../lib/types";
+import type { MedecinAPI, PatientAPI, OrdonnanceNumeriqueAPI, NotificationAPI } from "../lib/types";
 import { session } from "../lib/api";
-import { medecinsApi, patientsApi, ordonnancesNumeriquesApi } from "../lib/api";
+import { medecinsApi, patientsApi, ordonnancesNumeriquesApi, notificationsApi } from "../lib/api";
 import { DoctorPatientsList } from "./DoctorPatientsList";
 import { DoctorAppointments } from "./DoctorAppointments";
 import { DoctorPrescriptionForm } from "./DoctorPrescriptionForm";
+import { useLiveAlerts } from "../lib/useLiveAlerts";
+import { NotificationCenter, type NotifDisplay } from "./NotificationCenter";
+
+const DOCTOR_NOTIF_FALLBACK = { title: "Notification", icon: Bell, color: "#6B7280" };
+const DOCTOR_NOTIF_CONFIG: Record<string, { title: string; icon: typeof Inbox; color: string }> = {
+  COMMANDE_PRETE: { title: "Commande prête", icon: CheckCircle, color: "#10B981" },
+};
+function toDoctorNotifDisplay(n: NotificationAPI): NotifDisplay {
+  const cfg = DOCTOR_NOTIF_CONFIG[n.typeEvenement] ?? DOCTOR_NOTIF_FALLBACK;
+  return {
+    id: n.id,
+    title: cfg.title,
+    body: n.message,
+    time: new Date(n.createdAt).toLocaleString("fr-FR", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }),
+    read: n.lue,
+    icon: cfg.icon,
+    color: cfg.color,
+    raw: n,
+  };
+}
 
 type DoctorView = "home" | "patients" | "appointments" | "prescription";
 
@@ -25,6 +45,30 @@ export function DoctorDashboard({ onLogout }: Props) {
   const [loading, setLoading] = useState(true);
 
   const medecinId = session.getUserId();
+  const [notifCenterOpen, setNotifCenterOpen] = useState(false);
+
+  const pollNotifs = useCallback(
+    () => (medecinId ? notificationsApi.getAll(medecinId) : Promise.resolve([])),
+    [medecinId],
+  );
+  const alerts = useLiveAlerts({
+    storageKey: "doctor",
+    poll: pollNotifs,
+    getId: (n) => n.id,
+    enabled: !!medecinId,
+  });
+  const notifDisplays = alerts.items.map(toDoctorNotifDisplay).sort((a, b) => b.raw.createdAt.localeCompare(a.raw.createdAt));
+  const unreadCount = notifDisplays.filter((n) => !n.read).length;
+
+  const handleNotifClick = async (n: NotifDisplay) => {
+    if (!n.read) {
+      try { await notificationsApi.markRead(n.id); alerts.refresh(); } catch { /* ignore */ }
+    }
+  };
+  const handleMarkAllRead = async () => {
+    if (!medecinId) return;
+    try { await notificationsApi.markAllRead(medecinId); alerts.refresh(); } catch { /* ignore */ }
+  };
 
   useEffect(() => {
     if (!medecinId) return;
@@ -254,8 +298,13 @@ export function DoctorDashboard({ onLogout }: Props) {
           </div>
 
           <div className="flex items-center gap-4">
-            <button className="p-2 hover:bg-gray-100 rounded-lg relative">
+            <button onClick={() => setNotifCenterOpen(true)} className="p-2 hover:bg-gray-100 rounded-lg relative">
               <Bell className="w-5 h-5 text-gray-600" />
+              {unreadCount > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-1 rounded-full flex items-center justify-center text-white font-bold bg-red-500" style={{ fontSize: "9px" }}>
+                  {unreadCount > 9 ? "9+" : unreadCount}
+                </span>
+              )}
             </button>
             <button className="p-2 hover:bg-gray-100 rounded-lg">
               <User className="w-5 h-5 text-gray-600" />
@@ -267,6 +316,14 @@ export function DoctorDashboard({ onLogout }: Props) {
           {content}
         </div>
       </div>
+
+      <NotificationCenter
+        open={notifCenterOpen}
+        onClose={() => setNotifCenterOpen(false)}
+        notifications={notifDisplays}
+        onMarkAllRead={handleMarkAllRead}
+        onNotifClick={handleNotifClick}
+      />
     </div>
   );
 }

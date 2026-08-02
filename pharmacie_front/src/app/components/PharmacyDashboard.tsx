@@ -1,15 +1,18 @@
 import { useState, useEffect, useCallback } from "react";
 import { RequestList } from "./RequestList";
 import { InventoryPanel } from "./InventoryPanel";
+import { NotificationToast } from "./NotificationToast";
+import { NotificationCenter, type NotifDisplay } from "./NotificationCenter";
 import {
   Package, Inbox, BarChart3, LogOut, Home, User,
-  MapPin, Star, ChevronRight, Settings, HelpCircle, Shield, Phone, Bell,
-  Truck, CheckCircle, Clock, AlertCircle,
+  MapPin, Star, ChevronRight, ChevronDown, Settings, HelpCircle, Shield, Phone, Bell,
+  Truck, CheckCircle, Clock, AlertCircle, Volume2, VolumeX,
 } from "lucide-react";
 import {
   pharmaciesApi, demandesApi, commandesApi, medicamentsApi, notificationsApi, livraisonsApi, session,
 } from "../lib/api";
-import type { PharmacieAPI, DemandeEnAttenteAPI, CommandePharmacieAPI, MedicamentAPI, LivraisonAPI } from "../lib/types";
+import { useLiveAlerts } from "../lib/useLiveAlerts";
+import type { PharmacieAPI, DemandeEnAttenteAPI, CommandePharmacieAPI, MedicamentAPI, LivraisonAPI, NotificationAPI } from "../lib/types";
 
 // Re-export des types pour les sous-composants
 export type { DemandeEnAttenteAPI as Request } from "../lib/types";
@@ -38,6 +41,29 @@ const statutColor: Record<CommandePharmacieAPI["statut"], string> = {
   TERMINEE:       "#6B7280",
   ANNULEE:        "#EF4444",
 };
+
+// ── Notifications ──────────────────────────────────────────────────────────────
+
+const NOTIF_CONFIG: Record<string, { title: string; icon: typeof Inbox; color: string; tab: PharmacyTab }> = {
+  DEMANDE_ENVOYEE:  { title: "Nouvelle demande reçue",   icon: Inbox,   color: "#1A3072", tab: "requests" },
+  COMMANDE_VALIDEE: { title: "Nouvelle commande validée", icon: Package, color: "#10B981", tab: "commandes" },
+  COMMANDE_PRETE:   { title: "Commande prête",           icon: CheckCircle, color: "#10B981", tab: "commandes" },
+};
+const NOTIF_FALLBACK = { title: "Notification", icon: Bell, color: "#6B7280", tab: "home" as PharmacyTab };
+
+function toNotifDisplay(n: NotificationAPI): NotifDisplay {
+  const cfg = NOTIF_CONFIG[n.typeEvenement] ?? NOTIF_FALLBACK;
+  return {
+    id: n.id,
+    title: cfg.title,
+    body: n.message,
+    time: new Date(n.createdAt).toLocaleString("fr-FR", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }),
+    read: n.lue,
+    icon: cfg.icon,
+    color: cfg.color,
+    raw: n,
+  };
+}
 
 // ── Bottom navigation ─────────────────────────────────────────────────────────
 
@@ -143,7 +169,13 @@ function PharmacyHomeTab({
     return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
   }).length;
 
+  const traitees = commandes.filter((c) => c.statut === "TERMINEE").length;
   const recentCommandes = commandes.slice(0, 3);
+
+  // KPIs calculés (partiellement mockés pour la démo)
+  const tauxReponse = thisMonth > 0 ? Math.round((traitees / thisMonth) * 100) : 90;
+  const tauxDispo = 85;
+  const tempsMoyen = 15;
 
   return (
     <div className="px-4 py-4 space-y-4">
@@ -163,22 +195,57 @@ function PharmacyHomeTab({
         <div className="absolute -right-2 top-10 w-14 h-14 rounded-full bg-white/10" />
       </div>
 
-      {/* Stats grid */}
-      <div className="grid grid-cols-3 gap-3">
-        <div className="bg-white rounded-2xl p-4 border border-gray-100">
-          <p className="text-2xl font-bold text-gray-900">{thisMonth}</p>
-          <p className="text-xs text-gray-500 mt-0.5">Commandes (mois)</p>
+      {/* Tableau de bord KPIs */}
+      <div>
+        <div className="flex items-center justify-between mb-3">
+          <p className="text-base font-bold text-gray-900">Tableau de bord</p>
+          <button className="flex items-center gap-1 text-sm text-gray-500 px-2 py-1 rounded-lg hover:bg-gray-100">
+            Aujourd'hui
+            <ChevronDown className="w-3.5 h-3.5" />
+          </button>
         </div>
-        <button onClick={onGoRequests} className="bg-white rounded-2xl p-4 border border-gray-100 text-left hover:border-[#D6DCF0] transition">
-          <p className="text-2xl font-bold" style={{ color: pendingCount > 0 ? "#EF4444" : GREEN }}>{pendingCount}</p>
-          <p className="text-xs text-gray-500 mt-0.5">En attente</p>
-        </button>
-        <button onClick={onGoInventory} className="bg-white rounded-2xl p-4 border border-gray-100 text-left hover:border-[#D6DCF0] transition">
-          <p className="text-2xl font-bold" style={{ color: GREEN }}>
-            <Package className="w-6 h-6" style={{ color: GREEN }} />
-          </p>
-          <p className="text-xs text-gray-500 mt-0.5">Stock</p>
-        </button>
+        <div className="grid grid-cols-3 gap-3">
+          {/* Demandes reçues */}
+          <div className="rounded-2xl px-3 py-4" style={{ backgroundColor: "#ECFDF5" }}>
+            <p className="text-2xl font-bold" style={{ color: "#059669" }}>{thisMonth}</p>
+            <p className="text-xs text-gray-600 mt-0.5 leading-tight">Demandes reçues</p>
+          </div>
+          {/* Demandes traitées */}
+          <div className="rounded-2xl px-3 py-4" style={{ backgroundColor: "#ECFDF5" }}>
+            <p className="text-2xl font-bold" style={{ color: "#059669" }}>{traitees}</p>
+            <p className="text-xs text-gray-600 mt-0.5 leading-tight">Demandes traitées</p>
+          </div>
+          {/* En attente */}
+          <button
+            onClick={onGoRequests}
+            className="rounded-2xl px-3 py-4 text-left transition"
+            style={{ backgroundColor: pendingCount > 0 ? "#FFF3E6" : "#F3F4F6" }}
+          >
+            <p className="text-2xl font-bold" style={{ color: pendingCount > 0 ? "#F47920" : "#9CA3AF" }}>
+              {pendingCount}
+            </p>
+            <p className="text-xs text-gray-600 mt-0.5 leading-tight">En attente</p>
+          </button>
+          {/* Temps moyen */}
+          <div className="rounded-2xl px-3 py-4 border border-gray-100">
+            <p className="text-2xl font-bold text-gray-900">{tempsMoyen} <span className="text-sm font-medium text-gray-400">min</span></p>
+            <p className="text-xs text-gray-500 mt-0.5 leading-tight">Tps moyen réponse</p>
+          </div>
+          {/* Taux de réponse */}
+          <div className="rounded-2xl px-3 py-4 border border-gray-100">
+            <p className="text-2xl font-bold" style={{ color: tauxReponse >= 80 ? "#10B981" : "#F47920" }}>
+              {tauxReponse}%
+            </p>
+            <p className="text-xs text-gray-500 mt-0.5 leading-tight">Taux de réponse</p>
+          </div>
+          {/* Taux disponibilité */}
+          <button onClick={onGoInventory} className="rounded-2xl px-3 py-4 text-left border border-gray-100 transition">
+            <p className="text-2xl font-bold" style={{ color: tauxDispo >= 80 ? "#10B981" : "#F47920" }}>
+              {tauxDispo}%
+            </p>
+            <p className="text-xs text-gray-500 mt-0.5 leading-tight">Taux dispo méds</p>
+          </button>
+        </div>
       </div>
 
       {/* Commandes récentes */}
@@ -406,7 +473,9 @@ function CommandesTab({ commandes, onMarquerPrete, onTerminer }: {
 
 // ── Profile tab ───────────────────────────────────────────────────────────────
 
-function PharmacyProfileTab({ pharmacie, onLogout }: { pharmacie: PharmacieAPI | null; onLogout?: () => void }) {
+function PharmacyProfileTab({
+  pharmacie, onLogout, soundEnabled, onToggleSound,
+}: { pharmacie: PharmacieAPI | null; onLogout?: () => void; soundEnabled: boolean; onToggleSound: (v: boolean) => void }) {
   return (
     <div className="px-4 py-4 space-y-4 pb-6">
       <div className="bg-white rounded-2xl border border-gray-100 p-5">
@@ -446,6 +515,25 @@ function PharmacyProfileTab({ pharmacie, onLogout }: { pharmacie: PharmacieAPI |
         </div>
       </div>
 
+      <div className="bg-white rounded-2xl border border-gray-100 p-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            {soundEnabled ? <Volume2 className="w-4 h-4 text-gray-400" /> : <VolumeX className="w-4 h-4 text-gray-400" />}
+            <div>
+              <p className="text-sm font-semibold text-gray-900">Signal sonore</p>
+              <p className="text-xs text-gray-400 mt-0.5">Jouer un son à chaque nouvelle notification</p>
+            </div>
+          </div>
+          <button
+            onClick={() => onToggleSound(!soundEnabled)}
+            className="relative w-10 h-6 rounded-full transition-colors shrink-0"
+            style={{ backgroundColor: soundEnabled ? GREEN : "#D1D5DB" }}
+          >
+            <span className="absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-all" style={{ left: soundEnabled ? "22px" : "2px" }} />
+          </button>
+        </div>
+      </div>
+
       <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
         {[
           { icon: Settings, label: "Paramètres de la pharmacie" },
@@ -480,7 +568,33 @@ export function PharmacyDashboard({ onLogout }: Props) {
   const [demandesEnAttente, setDemandes] = useState<DemandeEnAttenteAPI[]>([]);
   const [commandes, setCommandes]        = useState<CommandePharmacieAPI[]>([]);
   const [medicaments, setMedicaments]    = useState<MedicamentAPI[]>([]);
-  const [unreadCount, setUnreadCount]    = useState(0);
+  const [notifCenterOpen, setNotifCenterOpen] = useState(false);
+
+  const pollNotifs = useCallback(
+    () => (pharmacieId ? notificationsApi.getAll(pharmacieId) : Promise.resolve([])),
+    [pharmacieId],
+  );
+  const alerts = useLiveAlerts({
+    storageKey: "pharmacy",
+    poll: pollNotifs,
+    getId: (n) => n.id,
+    enabled: !!pharmacieId,
+  });
+  const notifDisplays = alerts.items.map(toNotifDisplay).sort((a, b) => b.raw.createdAt.localeCompare(a.raw.createdAt));
+  const unreadCount = notifDisplays.filter((n) => !n.read).length;
+
+  const handleNotifOpen = async (n: NotifDisplay) => {
+    setNotifCenterOpen(false);
+    alerts.dismissNew();
+    setTab((NOTIF_CONFIG[n.raw.typeEvenement] ?? NOTIF_FALLBACK).tab);
+    if (!n.read) {
+      try { await notificationsApi.markRead(n.id); alerts.refresh(); } catch { /* ignore */ }
+    }
+  };
+  const handleMarkAllRead = async () => {
+    if (!pharmacieId) return;
+    try { await notificationsApi.markAllRead(pharmacieId); alerts.refresh(); } catch { /* ignore */ }
+  };
 
   const reloadCommandes = () =>
     commandesApi.getByPharmacieDetail(pharmacieId).then(setCommandes).catch(() => {});
@@ -491,9 +605,6 @@ export function PharmacyDashboard({ onLogout }: Props) {
     demandesApi.getEnAttenteParPharmacie(pharmacieId).then(setDemandes).catch(() => {});
     reloadCommandes();
     medicamentsApi.list().then(setMedicaments).catch(() => {});
-    notificationsApi.getNonLues(pharmacieId)
-      .then((n) => setUnreadCount(n.length))
-      .catch(() => {});
   }, [pharmacieId]);
 
   const handleMarquerPrete = async (id: string) => {
@@ -538,10 +649,12 @@ export function PharmacyDashboard({ onLogout }: Props) {
               </div>
             </div>
             <div className="flex items-center gap-1">
-              <button className="relative p-2 rounded-full hover:bg-gray-100">
+              <button onClick={() => setNotifCenterOpen(true)} className="relative p-2 rounded-full hover:bg-gray-100">
                 <Bell className="w-5 h-5 text-gray-600" />
                 {unreadCount > 0 && (
-                  <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-red-500" />
+                  <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-1 rounded-full flex items-center justify-center text-white font-bold bg-red-500" style={{ fontSize: "9px" }}>
+                    {unreadCount > 9 ? "9+" : unreadCount}
+                  </span>
                 )}
               </button>
               {onLogout && (
@@ -563,10 +676,12 @@ export function PharmacyDashboard({ onLogout }: Props) {
             {tab === "profile" && "Profil pharmacie"}
           </h1>
           <div className="flex items-center gap-3">
-            <button className="relative p-2 rounded-full hover:bg-gray-100">
+            <button onClick={() => setNotifCenterOpen(true)} className="relative p-2 rounded-full hover:bg-gray-100">
               <Bell className="w-5 h-5 text-gray-600" />
               {unreadCount > 0 && (
-                <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-red-500" />
+                <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-1 rounded-full flex items-center justify-center text-white font-bold bg-red-500" style={{ fontSize: "9px" }}>
+                  {unreadCount > 9 ? "9+" : unreadCount}
+                </span>
               )}
             </button>
             <div className="flex items-center gap-1.5">
@@ -606,7 +721,12 @@ export function PharmacyDashboard({ onLogout }: Props) {
               <InventoryPanel medicaments={medicaments} onAdd={handleAddMedicament} />
             </div>
           )}
-          {tab === "profile" && <PharmacyProfileTab pharmacie={pharmacie} onLogout={onLogout} />}
+          {tab === "profile" && (
+            <PharmacyProfileTab
+              pharmacie={pharmacie} onLogout={onLogout}
+              soundEnabled={alerts.soundEnabled} onToggleSound={alerts.setSoundEnabled}
+            />
+          )}
         </div>
 
         <PharmacyNav
@@ -614,6 +734,26 @@ export function PharmacyDashboard({ onLogout }: Props) {
           onTab={setTab}
         />
       </div>
+
+      {alerts.newItem && (() => {
+        const n = toNotifDisplay(alerts.newItem);
+        const Icon = n.icon;
+        return (
+          <NotificationToast
+            icon={Icon} color={n.color} title={n.title} message={n.body}
+            onView={() => handleNotifOpen(n)}
+            onDismiss={() => { alerts.dismissNew(); notificationsApi.markRead(n.id).then(() => alerts.refresh()).catch(() => {}); }}
+          />
+        );
+      })()}
+
+      <NotificationCenter
+        open={notifCenterOpen}
+        onClose={() => setNotifCenterOpen(false)}
+        notifications={notifDisplays}
+        onMarkAllRead={handleMarkAllRead}
+        onNotifClick={handleNotifOpen}
+      />
     </div>
   );
 }

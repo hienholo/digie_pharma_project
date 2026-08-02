@@ -8,9 +8,17 @@ import { session } from "./lib/api";
 
 type UserRole = "patient" | "pharmacy" | "delivery" | "doctor";
 
+const VALID_ROLES: UserRole[] = ["patient", "pharmacy", "delivery", "doctor"];
+
+function getStoredRole(): UserRole | null {
+  const role = session.getRole();
+  return (VALID_ROLES as string[]).includes(role) ? (role as UserRole) : null;
+}
+
 export default function App() {
-  const [userRole, setUserRole] = useState<UserRole | null>(null);
-  const [userId, setUserId] = useState<string>("");
+  // Restaure la session depuis le localStorage : évite d'être renvoyé au login à chaque F5.
+  const [userRole, setUserRole] = useState<UserRole | null>(() => getStoredRole());
+  const [userId, setUserId] = useState<string>(() => (getStoredRole() ? session.getUserId() : ""));
 
   const handleLogin = (role: UserRole, id: string) => {
     setUserRole(role);

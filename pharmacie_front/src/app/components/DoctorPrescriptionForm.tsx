@@ -52,8 +52,11 @@ export function DoctorPrescriptionForm({ medecinId, patients, onClose, onCreated
     (m.nomGenerique ?? "").toLowerCase().includes(medSearch.toLowerCase()),
   );
 
+  const [addedMedName, setAddedMedName] = useState<string | null>(null);
+
   const addLigne = () => {
     if (!selectedMed) return;
+    const nom = selectedMed.nomCommercial;
     setLignes((prev) => [...prev, {
       tempId: Date.now().toString(),
       medicament: selectedMed,
@@ -68,6 +71,9 @@ export function DoctorPrescriptionForm({ medecinId, patients, onClose, onCreated
     setPosologie("");
     setDuree("7 jours");
     setInstructions("");
+    // Confirmation visuelle
+    setAddedMedName(nom);
+    setTimeout(() => setAddedMedName(null), 2500);
   };
 
   const removeLigne = (tempId: string) => setLignes((prev) => prev.filter((l) => l.tempId !== tempId));
@@ -237,6 +243,16 @@ export function DoctorPrescriptionForm({ medecinId, patients, onClose, onCreated
                 placeholder="Ex : À prendre pendant les repas"
                 className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-sm focus:outline-none focus:border-[#1A3072]" />
             </div>
+
+            {/* Confirmation ajout */}
+            {addedMedName && (
+              <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-green-50 border border-green-200">
+                <Check className="w-4 h-4 text-green-600 shrink-0" />
+                <p className="text-sm font-semibold text-green-700">
+                  {addedMedName} — médicament ajouté avec succès !
+                </p>
+              </div>
+            )}
 
             <button type="button" onClick={addLigne} disabled={!selectedMed}
               className="w-full py-2.5 text-white rounded-xl font-medium text-sm flex items-center justify-center gap-2 disabled:opacity-50 transition" style={{ backgroundColor: "#1A3072" }} onMouseEnter={e=>(e.currentTarget.style.backgroundColor="#122660")} onMouseLeave={e=>(e.currentTarget.style.backgroundColor="#1A3072")}>
