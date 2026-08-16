@@ -6,6 +6,7 @@ import java.util.UUID;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -107,7 +108,14 @@ public class LivreurController {
     public ResponseEntity<List<Livreur>> getAll() {
         return ResponseEntity.ok(livreurService.findAll());
     }
- 
+
+    /** DELETE /api/v1/livreurs/{id} — suppression admin. */
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> supprimer(@PathVariable UUID id) {
+        livreurService.supprimer(id);
+        return ResponseEntity.noContent().build();
+    }
+
     record DisponibiliteRequest(
             DisponibiliteStatut statut,
             Double latitude,

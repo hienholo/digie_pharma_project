@@ -4,9 +4,13 @@ type Props = {
   onNav: (page: string) => void;
   current: string;
   onLogout?: () => void;
+  // Ville/commune à afficher — calculée dynamiquement à partir de la position réelle de
+  // l'utilisateur (voir nearestCommune dans PatientSpace.tsx). "Abidjan" par défaut tant
+  // qu'aucune position n'est connue.
+  cityLabel?: string;
 };
 
-export function Header({ onNav, current, onLogout }: Props) {
+export function Header({ onNav, current, onLogout, cityLabel = "Abidjan" }: Props) {
   return (
     <header className="sticky top-0 z-40 bg-white border-b border-gray-200">
       <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
@@ -47,7 +51,7 @@ export function Header({ onNav, current, onLogout }: Props) {
         <div className="flex items-center gap-3">
           <button className="flex items-center gap-1 text-gray-600 text-sm">
             <MapPin className="w-4 h-4" style={{ color: "#10B981" }} />
-            <span className="hidden sm:inline">Abidjan</span>
+            <span className="hidden sm:inline">{cityLabel}</span>
           </button>
           <button className="relative p-2 rounded-full hover:bg-gray-100">
             <Bell className="w-5 h-5 text-gray-700" />

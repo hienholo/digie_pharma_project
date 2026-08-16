@@ -6,7 +6,7 @@ import type {
   MedecinAPI, OrdonnanceNumeriqueAPI, RendezVousAPI,
   DemandeAPI, DemandeReponseAPI, DemandeEnAttenteAPI,
   CommandeAPI, CommandePharmacieAPI, CommandePatientAPI, LivraisonAPI, NotificationAPI,
-  LoginResponse, RappelAPI,
+  LoginResponse, RappelAPI, AdminStatsAPI, LivreurAPI,
 } from "./types";
 
 const BASE = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:3000/api/v1";
@@ -85,6 +85,9 @@ export const patientsApi = {
       method: "PATCH",
       body: JSON.stringify(mesures),
     }),
+
+  supprimer: (id: string) =>
+    http<void>(`/patients/${id}`, { method: "DELETE" }),
 };
 
 // ── Auth ──────────────────────────────────────────────────────────────────────
@@ -143,6 +146,9 @@ export const pharmaciesApi = {
       method: "PATCH",
       body: JSON.stringify({ actif }),
     }),
+
+  supprimer: (id: string) =>
+    http<void>(`/pharmacies/${id}`, { method: "DELETE" }),
 };
 
 // ── Ordonnances ───────────────────────────────────────────────────────────────
@@ -290,6 +296,15 @@ export const medecinsApi = {
 
   getAll: () =>
     http<MedecinAPI[]>("/medecins"),
+
+  valider: (id: string) =>
+    http<MedecinAPI>(`/medecins/${id}/valider`, { method: "PATCH" }),
+
+  suspendre: (id: string) =>
+    http<MedecinAPI>(`/medecins/${id}/suspendre`, { method: "PATCH" }),
+
+  supprimer: (id: string) =>
+    http<void>(`/medecins/${id}`, { method: "DELETE" }),
 };
 
 // ── Ordonnances numériques (médecin) ──────────────────────────────────────────
@@ -331,13 +346,25 @@ export const rendezVousApi = {
 
 export const livreursApi = {
   getById: (id: string) =>
-    http<import("./types").LivreurAPI>(`/livreurs/${id}`),
+    http<LivreurAPI>(`/livreurs/${id}`),
+
+  getAll: () =>
+    http<LivreurAPI[]>("/livreurs"),
 
   changerDisponibilite: (id: string, statut: "DISPONIBLE" | "HORS_LIGNE", latitude?: number, longitude?: number) =>
-    http<import("./types").LivreurAPI>(`/livreurs/${id}/disponibilite`, {
+    http<LivreurAPI>(`/livreurs/${id}/disponibilite`, {
       method: "PATCH",
       body: JSON.stringify({ statut, latitude: latitude ?? null, longitude: longitude ?? null }),
     }),
+
+  valider: (id: string) =>
+    http<LivreurAPI>(`/livreurs/${id}/valider`, { method: "PATCH" }),
+
+  suspendre: (id: string) =>
+    http<LivreurAPI>(`/livreurs/${id}/suspendre`, { method: "PATCH" }),
+
+  supprimer: (id: string) =>
+    http<void>(`/livreurs/${id}`, { method: "DELETE" }),
 };
 
 // ── Rappels médicaments ───────────────────────────────────────────────────────
@@ -386,4 +413,14 @@ export const notificationsApi = {
 
   markAllRead: (userId: string) =>
     http<void>(`/notifications/destinataire/${userId}/lire-tout`, { method: "PATCH" }),
+};
+
+// ── Admin ─────────────────────────────────────────────────────────────────────
+
+export const adminApi = {
+  login: (email: string, password: string) =>
+    authApi.login(email, password, "ADMIN"),
+
+  stats: () =>
+    http<AdminStatsAPI>("/admins/stats"),
 };

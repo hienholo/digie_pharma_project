@@ -59,4 +59,11 @@ public class PharmacieService {
     public List<Pharmacie> findAll() {
     return pharmacieRepository.findAll();
 }
+
+    /** Suppression admin. Échoue proprement (géré par GlobalExceptionHandler) si des données liées bloquent la contrainte. */
+    @Transactional
+    public void supprimer(UUID id) {
+        findById(id);
+        pharmacieRepository.deleteById(id);
+    }
 }

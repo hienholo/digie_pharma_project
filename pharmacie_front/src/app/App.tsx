@@ -4,6 +4,8 @@ import { PharmacyDashboard } from "./components/PharmacyDashboard";
 import { DeliveryDashboard } from "./components/DeliveryDashboard";
 import { DoctorDashboard } from "./components/DoctorDashboard";
 import { LoginPage } from "./components/LoginPage";
+import { AdminLoginPage } from "./components/AdminLoginPage";
+import { AdminDashboard } from "./components/AdminDashboard";
 import { session } from "./lib/api";
 
 type UserRole = "patient" | "pharmacy" | "delivery" | "doctor";
@@ -15,10 +17,16 @@ function getStoredRole(): UserRole | null {
   return (VALID_ROLES as string[]).includes(role) ? (role as UserRole) : null;
 }
 
+// Accès admin caché : uniquement via /admin, jamais affiché parmi les rôles publics.
+function isAdminRoute(): boolean {
+  return window.location.pathname.startsWith("/admin");
+}
+
 export default function App() {
   // Restaure la session depuis le localStorage : évite d'être renvoyé au login à chaque F5.
   const [userRole, setUserRole] = useState<UserRole | null>(() => getStoredRole());
   const [userId, setUserId] = useState<string>(() => (getStoredRole() ? session.getUserId() : ""));
+  const [adminId, setAdminId] = useState<string>(() => (session.getRole() === "admin" ? session.getUserId() : ""));
 
   const handleLogin = (role: UserRole, id: string) => {
     setUserRole(role);
@@ -30,6 +38,27 @@ export default function App() {
     setUserRole(null);
     setUserId("");
   };
+
+  const handleAdminLogout = () => {
+    session.clear();
+    setAdminId("");
+  };
+
+  if (isAdminRoute()) {
+    if (!adminId) {
+      return (
+        <div className="min-h-screen flex justify-center" style={{ backgroundColor: "#FFFFFF" }}>
+          <div
+            className="w-full flex flex-col overflow-hidden"
+            style={{ maxWidth: "clamp(480px, 50vw, 620px)", minHeight: "100dvh", backgroundColor: "#FFFFFF" }}
+          >
+            <AdminLoginPage onLogin={setAdminId} />
+          </div>
+        </div>
+      );
+    }
+    return <AdminDashboard onLogout={handleAdminLogout} />;
+  }
 
   let content;
   if (!userRole) {

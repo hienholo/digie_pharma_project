@@ -6,6 +6,9 @@ import {
 import type { PharmacieAPI, NotificationAPI, CommandeAPI, CommandePatientAPI, PatientAPI, DemandeAPI, DemandeReponseAPI, OrdonnanceAPI, RappelAPI } from "../lib/types";
 import { ocrMock } from "../datamock/ocr.mock";
 import type { Notif } from "../datamock/notifications.mock";
+import waveIcon from "../assets/img/wave.png";
+import orangeMoneyIcon from "../assets/img/om.png";
+import mtnMoneyIcon from "../assets/img/mtn.jpg";
 import {
   Search,
   Camera,
@@ -18,7 +21,6 @@ import {
   Smartphone,
   Package,
   Truck,
-  CreditCard,
   Banknote,
   Check,
   ChevronLeft,
@@ -46,6 +48,11 @@ import {
   Pencil,
   Stethoscope,
   FileText,
+  Loader2,
+  Download,
+  Calendar,
+  Send,
+  Share2,
 } from "lucide-react";
 import type { Pharmacy } from "./PharmacyCard";
 import { OrderStatus, type OrderStep } from "./OrderStatus";
@@ -148,18 +155,63 @@ function StepBar({ current }: { current: PatientStep }) {
 
 // ── Module 1 : Recherche ──────────────────────────────────────────────────────
 
-const recentSearches = ["Doliprane 1000mg", "Amoxicilline", "Vitamine D3"];
-
-// Communes d'Abidjan proposées pour le ciblage géographique — coordonnées approximatives
-// des centres de commune (le backend n'accepte que lat/lng, pas de nom de commune).
-const ABIDJAN_COMMUNES: Record<string, { lat: number; lng: number }> = {
+// Communes/quartiers d'Abidjan + grandes villes de Côte d'Ivoire proposés pour le ciblage
+// géographique — coordonnées approximatives des centres (le backend n'accepte que lat/lng,
+// pas de nom de ville).
+const VILLES_CI: Record<string, { lat: number; lng: number }> = {
+  // Abidjan — communes et quartiers
+  "Abobo": { lat: 5.4198, lng: -4.0147 },
+  "Adjamé": { lat: 5.3667, lng: -4.0333 },
   "Angré": { lat: 5.3936, lng: -3.9852 },
-  "Cocody": { lat: 5.3599, lng: -3.9757 },
-  "Riviera": { lat: 5.3306, lng: -3.9364 },
-  "Deux-Plateaux": { lat: 5.3654, lng: -4.0083 },
+  "Anyama": { lat: 5.4939, lng: -4.0511 },
+  "Attécoubé": { lat: 5.3333, lng: -4.0500 },
   "Bingerville": { lat: 5.3557, lng: -3.8917 },
+  "Cocody": { lat: 5.3599, lng: -3.9757 },
+  "Deux-Plateaux": { lat: 5.3654, lng: -4.0083 },
+  "Koumassi": { lat: 5.2947, lng: -3.9508 },
+  "Marcory": { lat: 5.2900, lng: -3.9950 },
+  "Plateau": { lat: 5.3200, lng: -4.0200 },
+  "Port-Bouët": { lat: 5.2500, lng: -3.9333 },
+  "Riviera": { lat: 5.3306, lng: -3.9364 },
+  "Songon": { lat: 5.3167, lng: -4.2833 },
+  "Treichville": { lat: 5.2924, lng: -4.0083 },
+  "Yopougon": { lat: 5.3450, lng: -4.0850 },
+  // Autres grandes villes de Côte d'Ivoire
+  "Aboisso": { lat: 5.4703, lng: -3.2072 },
+  "Abengourou": { lat: 6.7297, lng: -3.4964 },
+  "Adzopé": { lat: 6.1042, lng: -3.8628 },
+  "Agboville": { lat: 5.9276, lng: -4.2143 },
+  "Bonoua": { lat: 5.2735, lng: -3.6013 },
+  "Bouaflé": { lat: 6.9950, lng: -5.7439 },
+  "Bouaké": { lat: 7.6906, lng: -5.0300 },
+  "Bondoukou": { lat: 8.0402, lng: -2.8000 },
+  "Dabou": { lat: 5.3197, lng: -4.3777 },
+  "Daloa": { lat: 6.8770, lng: -6.4502 },
+  "Dimbokro": { lat: 6.6486, lng: -4.7061 },
+  "Divo": { lat: 5.8372, lng: -5.3572 },
+  "Ferkessédougou": { lat: 9.5975, lng: -5.1928 },
+  "Gagnoa": { lat: 6.1319, lng: -5.9506 },
+  "Grand-Bassam": { lat: 5.2118, lng: -3.7380 },
+  "Issia": { lat: 6.4939, lng: -6.5850 },
+  "Katiola": { lat: 8.1389, lng: -5.1017 },
+  "Korhogo": { lat: 9.4580, lng: -5.6296 },
+  "Man": { lat: 7.4125, lng: -7.5537 },
+  "Odienné": { lat: 9.5093, lng: -7.5644 },
+  "San-Pédro": { lat: 4.7485, lng: -6.6363 },
+  "Sassandra": { lat: 4.9500, lng: -6.0833 },
+  "Séguéla": { lat: 7.9614, lng: -6.6731 },
+  "Soubré": { lat: 5.7847, lng: -6.5931 },
+  "Tabou": { lat: 4.4231, lng: -7.3528 },
+  "Toumodi": { lat: 6.5561, lng: -5.0169 },
+  "Touba": { lat: 8.2833, lng: -7.6833 },
+  "Yamoussoukro": { lat: 6.8276, lng: -5.2893 },
 };
-const RAYONS_KM = [1, 5, 10, 20];
+const RAYONS_KM = [1, 2, 5, 10, 20];
+
+// Comparaison insensible aux accents/majuscules pour l'auto-complétion des communes.
+function normaliser(s: string): string {
+  return s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+}
 
 export interface SearchZone {
   commune?: string;
@@ -167,42 +219,156 @@ export interface SearchZone {
   useCurrentLocation: boolean;
 }
 
+// GET /pharmacies/proximite trie déjà par distance côté serveur mais ne renvoie pas la valeur
+// calculée dans le JSON — on la recalcule donc côté client à partir du point de référence
+// (position du patient ou centre de la commune) et des lat/lng de la pharmacie, déjà présents.
+function haversineKm(a: { lat: number; lng: number }, b: { lat: number; lng: number }): number {
+  const R = 6371;
+  const dLat = ((b.lat - a.lat) * Math.PI) / 180;
+  const dLng = ((b.lng - a.lng) * Math.PI) / 180;
+  const s =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos((a.lat * Math.PI) / 180) * Math.cos((b.lat * Math.PI) / 180) * Math.sin(dLng / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(s), Math.sqrt(1 - s));
+}
+
+// Affichage "ville" dans le header : le backend ne fait pas de géocodage inverse, donc on
+// approxime en cherchant la ville/commune connue la plus proche de la position réelle du
+// patient. Au-delà de 100 km (hors couverture connue) ou sans position, repli sur "Abidjan".
+function nearestCommune(loc: { lat: number; lng: number } | null): string {
+  if (!loc) return "Abidjan";
+  let best: string | null = null;
+  let bestDist = Infinity;
+  for (const [nom, coords] of Object.entries(VILLES_CI)) {
+    const d = haversineKm(loc, coords);
+    if (d < bestDist) { bestDist = d; best = nom; }
+  }
+  return best && bestDist <= 100 ? best : "Abidjan";
+}
+
+// Convertit une pharmacie backend en carte affichable, avec distance recalculée depuis `from`.
+function toPharmacyCard(p: PharmacieAPI, from?: { lat: number; lng: number }): Pharmacy {
+  return {
+    id: p.id,
+    name: p.nom,
+    address: p.adresse,
+    distanceKm: from ? haversineKm(from, { lat: p.latitude, lng: p.longitude }) : (p.distanceKm ?? undefined),
+    open: true,
+    delivery: p.livraisonActive,
+    pickup: true,
+    available: "unknown",
+  };
+}
+
 function SearchModule({
   onSearch,
   onPrescription,
   nearbyPharmacies,
+  onSelectPharmacy,
   onShowMap,
   onGoHome,
+  recentSearches,
 }: {
   onSearch: (q: string, zone?: SearchZone) => void;
   onPrescription: () => void;
   nearbyPharmacies: Pharmacy[];
+  onSelectPharmacy: (p: Pharmacy, q?: string) => void;
   onShowMap: () => void;
   onGoHome: () => void;
+  recentSearches: string[];
 }) {
   const [q, setQ] = useState("");
-  const [showCommune, setShowCommune] = useState(false);
-  const [showRayon, setShowRayon] = useState(false);
   const [commune, setCommune] = useState<string | null>(null);
+  const [communeQuery, setCommuneQuery] = useState("");
+  const [communeFocused, setCommuneFocused] = useState(false);
   const [rayon, setRayon] = useState(5);
   const [useLocation, setUseLocation] = useState(false);
-  const [locLoading, setLocLoading] = useState(false);
+  const [zoneLoading, setZoneLoading] = useState(false);
+  const [zoneError, setZoneError] = useState<string | null>(null);
+  // null = liste par défaut (nearbyPharmacies) ; sinon résultat d'une recherche explicite par zone.
+  const [zoneResults, setZoneResults] = useState<Pharmacy[] | null>(null);
+  const [zoneLabel, setZoneLabel] = useState<string | null>(null);
 
   const zone = (): SearchZone => ({ commune: commune ?? undefined, rayonKm: rayon, useCurrentLocation: useLocation });
 
-  const handleLocation = () => {
-    if (!navigator.geolocation) return;
-    setLocLoading(true);
+  // Suggestions d'auto-complétion : toutes les villes/communes si le champ est vide et
+  // focus, sinon celles dont le nom contient la saisie (insensible accents/majuscules).
+  const communeSuggestions = useMemo(() => {
+    const toutesLesVilles = Object.keys(VILLES_CI);
+    const requete = normaliser(communeQuery.trim());
+    const filtrees = requete
+      ? toutesLesVilles.filter((v) => normaliser(v).includes(requete))
+      : toutesLesVilles;
+    return filtrees.slice(0, 8);
+  }, [communeQuery]);
+
+  const selectCommune = (nom: string) => {
+    setCommune(nom);
+    setCommuneQuery(nom);
+    setUseLocation(false);
+    setCommuneFocused(false);
+  };
+
+  const clearCommune = () => {
+    setCommune(null);
+    setCommuneQuery("");
+  };
+
+  // ── Option 1 : Ma position actuelle ──────────────────────────────────────
+  const handleUseLocation = () => {
+    if (!navigator.geolocation) {
+      setZoneError("Géolocalisation non disponible sur cet appareil.");
+      return;
+    }
+    setZoneLoading(true);
+    setZoneError(null);
     navigator.geolocation.getCurrentPosition(
-      () => { setUseLocation(true); setCommune(null); setLocLoading(false); },
-      () => setLocLoading(false),
+      async ({ coords }) => {
+        setUseLocation(true);
+        clearCommune();
+        try {
+          const from = { lat: coords.latitude, lng: coords.longitude };
+          const data = await pharmaciesApi.nearby(coords.latitude, coords.longitude);
+          setZoneResults(data.map((p) => toPharmacyCard(p, from)));
+          setZoneLabel("Autour de votre position");
+        } catch {
+          setZoneError("Impossible de récupérer les pharmacies à proximité.");
+        } finally {
+          setZoneLoading(false);
+        }
+      },
+      () => {
+        setZoneError("Localisation refusée ou indisponible.");
+        setZoneLoading(false);
+      },
     );
+  };
+
+  // ── Option 2 : commune/ville + rayon ─────────────────────────────────────
+  const handleZoneSearch = async () => {
+    if (!commune) return;
+    const coords = VILLES_CI[commune];
+    setUseLocation(false);
+    setZoneLoading(true);
+    setZoneError(null);
+    try {
+      const data = await pharmaciesApi.nearby(coords.lat, coords.lng, rayon);
+      setZoneResults(data.map((p) => toPharmacyCard(p, coords)));
+      setZoneLabel(`${commune} · ${rayon} km`);
+    } catch {
+      setZoneError("Impossible de récupérer les pharmacies dans cette zone.");
+    } finally {
+      setZoneLoading(false);
+    }
   };
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (q.trim()) onSearch(q.trim(), zone());
   };
+
+  const resultsList = zoneResults ?? nearbyPharmacies;
+  const sortedResults = [...resultsList].sort((a, b) => (a.distanceKm ?? Infinity) - (b.distanceKm ?? Infinity));
 
   return (
     <div className="flex flex-col pb-6 bg-white min-h-full">
@@ -242,22 +408,27 @@ function SearchModule({
         </div>
 
         {/* Zone de recherche */}
-        <div>
-          <p className="text-sm font-bold text-gray-900 mb-3">Zone de recherche</p>
+        <div className="space-y-4">
+          <p className="text-sm font-bold text-gray-900">Trouver une pharmacie disponible</p>
 
+          {/* Option 1 : Ma position actuelle */}
           <button
             type="button"
-            onClick={handleLocation}
-            disabled={locLoading}
-            className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl border mb-1 transition"
+            onClick={handleUseLocation}
+            disabled={zoneLoading}
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl border transition disabled:opacity-70"
             style={{
               borderColor: useLocation ? "#1A3072" : "#E5E7EB",
               backgroundColor: useLocation ? "#EEF1F8" : "#F9FAFB",
             }}
           >
-            <MapPin className="w-4 h-4 shrink-0" style={{ color: useLocation ? "#1A3072" : "#6B7280" }} />
+            {zoneLoading && useLocation ? (
+              <Loader2 className="w-4 h-4 shrink-0 animate-spin" style={{ color: "#1A3072" }} />
+            ) : (
+              <MapPin className="w-4 h-4 shrink-0" style={{ color: useLocation ? "#1A3072" : "#6B7280" }} />
+            )}
             <span className="flex-1 text-left text-sm font-medium text-gray-800">
-              {locLoading ? "Localisation…" : "Ma position actuelle"}
+              {zoneLoading && useLocation ? "Localisation…" : "Ma position actuelle"}
             </span>
             <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0"
               style={{ backgroundColor: useLocation ? "#1A3072" : "#F3F4F6" }}>
@@ -265,43 +436,61 @@ function SearchModule({
             </div>
           </button>
 
-          <button
-            type="button"
-            onClick={() => setShowCommune((v) => !v)}
-            className="w-full flex items-center justify-between py-2.5 text-sm font-medium text-gray-700"
-          >
-            <span>{commune ? `Commune : ${commune}` : "+ Sélectionner une commune"}</span>
-          </button>
-          {showCommune && (
-            <div className="flex flex-wrap gap-2 pb-2">
-              {Object.keys(ABIDJAN_COMMUNES).map((c) => (
-                <button
-                  key={c}
-                  type="button"
-                  onClick={() => { setCommune(commune === c ? null : c); setUseLocation(false); }}
-                  className="px-3 py-1.5 rounded-full text-xs font-medium transition border"
-                  style={{
-                    backgroundColor: commune === c ? "#1A3072" : "white",
-                    color: commune === c ? "white" : "#374151",
-                    borderColor: commune === c ? "#1A3072" : "#E5E7EB",
-                  }}
-                >
-                  {c}
-                </button>
-              ))}
-            </div>
-          )}
+          {/* Option 2 : commune + rayon — toujours visibles, pas de menu déroulant */}
+          <div className="rounded-2xl border border-gray-200 p-4">
+            <p className="text-xs font-semibold text-gray-500 mb-3">
+              Ou rechercher dans une autre zone
+            </p>
 
-          <button
-            type="button"
-            onClick={() => setShowRayon((v) => !v)}
-            className="w-full flex items-center justify-between py-2.5 text-sm font-medium text-gray-700 border-t border-gray-100"
-          >
-            <span>+ Définir un rayon de recherche</span>
-            <span className="text-xs text-gray-400">{rayon} km</span>
-          </button>
-          {showRayon && (
-            <div className="flex gap-2 pb-2">
+            <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-2">
+              Commune ou ville
+            </p>
+            <div className="relative mb-3">
+              <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5">
+                <Search className="w-4 h-4 text-gray-400 shrink-0" />
+                <input
+                  value={communeQuery}
+                  onChange={(e) => { setCommuneQuery(e.target.value); setCommune(null); }}
+                  onFocus={() => setCommuneFocused(true)}
+                  onBlur={() => setCommuneFocused(false)}
+                  placeholder="Rechercher une commune ou une ville…"
+                  className="flex-1 bg-transparent outline-none text-sm text-gray-800 placeholder:text-gray-400 min-w-0"
+                />
+                {communeQuery && (
+                  <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={clearCommune}>
+                    <X className="w-4 h-4 text-gray-400" />
+                  </button>
+                )}
+              </div>
+
+              {/* Auto-proposition : toute la liste au focus, filtrée en tapant */}
+              {communeFocused && communeSuggestions.length > 0 && (
+                <div className="absolute z-20 top-full left-0 right-0 mt-1.5 bg-white border border-gray-200 rounded-xl shadow-lg max-h-56 overflow-y-auto">
+                  {communeSuggestions.map((c) => (
+                    <button
+                      key={c}
+                      type="button"
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() => selectCommune(c)}
+                      className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-left hover:bg-gray-50 transition"
+                    >
+                      <MapPin className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+                      <span className={commune === c ? "font-semibold" : "text-gray-700"} style={commune === c ? { color: "#1A3072" } : {}}>
+                        {c}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              )}
+              {communeFocused && communeQuery && communeSuggestions.length === 0 && (
+                <div className="absolute z-20 top-full left-0 right-0 mt-1.5 bg-white border border-gray-200 rounded-xl shadow-lg px-3 py-2.5 text-xs text-gray-400">
+                  Aucune ville trouvée pour « {communeQuery} »
+                </div>
+              )}
+            </div>
+
+            <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-2">Rayon de recherche</p>
+            <div className="flex gap-2 mb-3">
               {RAYONS_KM.map((r) => (
                 <button
                   key={r}
@@ -318,24 +507,37 @@ function SearchModule({
                 </button>
               ))}
             </div>
-          )}
 
-          {(commune || useLocation) && (
-            <div className="mt-3 flex items-start gap-2 px-3 py-2.5 rounded-xl bg-green-50 text-xs text-green-700">
-              <Info className="w-3.5 h-3.5 shrink-0 mt-0.5" />
-              La demande sera envoyée uniquement aux pharmacies partenaires situées dans la zone sélectionnée.
+            <button
+              type="button"
+              onClick={handleZoneSearch}
+              disabled={!commune || zoneLoading}
+              className="w-full py-2.5 rounded-xl text-sm font-semibold transition disabled:opacity-50"
+              style={{ backgroundColor: commune ? "#1A3072" : "#E5E7EB", color: commune ? "white" : "#9CA3AF" }}
+            >
+              {zoneLoading && !useLocation ? "Recherche…" : "Lancer la recherche"}
+            </button>
+          </div>
+
+          {zoneError && (
+            <div className="flex items-start gap-2 px-3 py-2.5 rounded-xl bg-red-50 text-xs text-red-600">
+              <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+              {zoneError}
             </div>
           )}
         </div>
 
-        <button
-          type="submit"
-          disabled={!q.trim()}
-          className="w-full py-3.5 rounded-2xl text-white font-bold text-sm disabled:opacity-50 transition"
-          style={{ backgroundColor: "#10B981" }}
-        >
-          Rechercher
-        </button>
+        {/* Recherche par nom de médicament (optionnelle) : diffuse une demande aux pharmacies de la zone */}
+        <div>
+          <button
+            type="submit"
+            disabled={!q.trim()}
+            className="w-full py-3.5 rounded-2xl text-white font-bold text-sm disabled:opacity-50 transition"
+            style={{ backgroundColor: "#10B981" }}
+          >
+            Rechercher ce médicament auprès des pharmacies
+          </button>
+        </div>
       </form>
 
       {/* ── Recherches récentes ── */}
@@ -362,14 +564,22 @@ function SearchModule({
       {/* ── Pharmacies proches ── */}
       <div className="px-5 pt-6">
         <div className="flex items-center justify-between mb-3">
-          <p className="text-sm font-bold text-gray-900">Pharmacies proches</p>
+          <p className="text-sm font-bold text-gray-900">{zoneLabel ?? "Pharmacies proches"}</p>
           <button onClick={onShowMap} className="text-xs font-semibold text-blue-600">Voir la carte →</button>
         </div>
+        {zoneLoading && (
+          <div className="flex items-center gap-2 text-xs text-gray-400 py-3">
+            <Loader2 className="w-3.5 h-3.5 animate-spin" /> Recherche des pharmacies…
+          </div>
+        )}
+        {!zoneLoading && sortedResults.length === 0 && (
+          <p className="text-xs text-gray-400 py-3">Aucune pharmacie trouvée dans cette zone.</p>
+        )}
         <div className="space-y-3">
-          {nearbyPharmacies.map((p) => (
+          {sortedResults.map((p) => (
             <button
               key={p.id}
-              onClick={() => onSearch(q.trim())}
+              onClick={() => onSelectPharmacy(p, q.trim() || undefined)}
               className="w-full flex items-center gap-3 bg-white rounded-2xl p-4 text-left border border-gray-100 hover:border-blue-200 hover:shadow-sm transition"
             >
               {/* Avatar */}
@@ -624,6 +834,7 @@ function PharmaciesModule({
   onSelect,
   onBack,
   onShowMap,
+  cityLabel,
 }: {
   query: string;
   items: string[];
@@ -631,6 +842,7 @@ function PharmaciesModule({
   onSelect: (p: Pharmacy) => void;
   onBack: () => void;
   onShowMap: () => void;
+  cityLabel: string;
 }) {
   const [filter, setFilter] = useState<"all" | "in-stock" | "partial">("all");
 
@@ -662,7 +874,7 @@ function PharmaciesModule({
         <h2 className="text-lg font-bold text-gray-900">
           {query ? `Résultats pour "${query}"` : "Pharmacies disponibles"}
         </h2>
-        <p className="text-sm text-gray-500 mt-0.5">{pharmacies.length} pharmacies · Abidjan</p>
+        <p className="text-sm text-gray-500 mt-0.5">{pharmacies.length} pharmacies · {cityLabel}</p>
 
         {/* Searched items */}
         {items.length > 0 && (
@@ -1033,6 +1245,14 @@ function ValidationModule({
 
 // ── Module 7 : Paiement ───────────────────────────────────────────────────────
 
+type PayMethod = "cash" | "WAVE" | "ORANGE_MONEY" | "MTN_MONEY";
+
+const MOBILE_MONEY_METHODS: { key: PayMethod; label: string; icon: string }[] = [
+  { key: "WAVE",         label: "Wave",             icon: waveIcon },
+  { key: "ORANGE_MONEY", label: "Orange Money",     icon: orangeMoneyIcon },
+  { key: "MTN_MONEY",    label: "MTN Mobile Money", icon: mtnMoneyIcon },
+];
+
 function PaymentModule({
   items,
   mode,
@@ -1041,12 +1261,15 @@ function PaymentModule({
 }: {
   items: string[];
   mode: "pickup" | "delivery";
-  onPay: () => void;
+  onPay: (method: PayMethod) => void;
   onBack: () => void;
 }) {
-  const [payMethod, setPayMethod] = useState<"cash" | "card">("cash");
+  const [payMethod, setPayMethod] = useState<PayMethod>("cash");
+  const [phone, setPhone] = useState("");
 
   const fee = mode === "delivery" ? 300 : 0;
+  const isMobileMoney = payMethod !== "cash";
+  const selectedProvider = MOBILE_MONEY_METHODS.find((m) => m.key === payMethod);
 
   return (
     <div className="flex flex-col gap-4 px-5 py-5 pb-6">
@@ -1056,10 +1279,13 @@ function PaymentModule({
           Retour
         </button>
         <h2 className="text-lg font-bold text-gray-900">Paiement</h2>
+        <p className="text-sm text-gray-500 mt-0.5">
+          {fee > 0 ? "Règle les frais de livraison avec le moyen de ton choix" : "Choisis ton moyen de paiement"}
+        </p>
       </div>
 
       <div className="space-y-3">
-        {/* Cash on delivery */}
+        {/* Espèces */}
         <button
           onClick={() => setPayMethod("cash")}
           className="w-full flex items-start gap-4 p-5 rounded-2xl border-2 text-left transition"
@@ -1079,10 +1305,10 @@ function PaymentModule({
           </div>
           <div className="flex-1">
             <p className="font-semibold text-gray-900">
-              {mode === "delivery" ? "Paiement à la livraison" : "Paiement au retrait"}
+              {mode === "delivery" ? "Espèces à la livraison" : "Espèces en pharmacie"}
             </p>
             <p className="text-sm text-gray-500 mt-0.5">
-              Payez en espèces directement au livreur ou en pharmacie
+              Payez en espèces directement {mode === "delivery" ? "au livreur" : "à la pharmacie"}
             </p>
           </div>
           {payMethod === "cash" && (
@@ -1090,62 +1316,48 @@ function PaymentModule({
           )}
         </button>
 
-        {/* In-app card */}
-        <button
-          onClick={() => setPayMethod("card")}
-          className="w-full flex items-start gap-4 p-5 rounded-2xl border-2 text-left transition"
-          style={{
-            borderColor: payMethod === "card" ? "#1A3072" : "#E5E7EB",
-            backgroundColor: payMethod === "card" ? "#EEF1F8" : "white",
-          }}
-        >
-          <div
-            className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0"
-            style={{ backgroundColor: payMethod === "card" ? "#D6DCF0" : "#F3F4F6" }}
-          >
-            <CreditCard
-              className="w-6 h-6"
-              style={{ color: payMethod === "card" ? "#1A3072" : "#6B7280" }}
-            />
-          </div>
-          <div className="flex-1">
-            <div className="flex items-center gap-2">
-              <p className="font-semibold text-gray-900">Paiement via l'application</p>
-              <span className="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-700 font-medium">
-                Optionnel
-              </span>
-            </div>
-            <p className="text-sm text-gray-500 mt-0.5">
-              CIB · Edahabia · Virement — Paiement sécurisé
-            </p>
-          </div>
-          {payMethod === "card" && (
-            <CheckCircle2 className="w-5 h-5 text-blue-600 shrink-0" />
-          )}
-        </button>
+        {/* Mobile money : Wave, Orange Money, MTN */}
+        {MOBILE_MONEY_METHODS.map((m) => {
+          const active = payMethod === m.key;
+          return (
+            <button
+              key={m.key}
+              onClick={() => setPayMethod(m.key)}
+              className="w-full flex items-start gap-4 p-5 rounded-2xl border-2 text-left transition"
+              style={{
+                borderColor: active ? "#1A3072" : "#E5E7EB",
+                backgroundColor: active ? "#EEF1F8" : "white",
+              }}
+            >
+              <div className="w-12 h-12 rounded-xl overflow-hidden shrink-0 border border-gray-100">
+                <img src={m.icon} alt={m.label} className="w-full h-full object-cover" />
+              </div>
+              <div className="flex-1">
+                <p className="font-semibold text-gray-900">{m.label}</p>
+                <p className="text-sm text-gray-500 mt-0.5">Paiement mobile money</p>
+              </div>
+              {active && <CheckCircle2 className="w-5 h-5 text-blue-600 shrink-0" />}
+            </button>
+          );
+        })}
       </div>
 
-      {/* Card form (mock) */}
-      {payMethod === "card" && (
+      {/* Numéro mobile money */}
+      {isMobileMoney && (
         <div className="bg-white rounded-2xl border border-gray-200 p-4 space-y-3">
-          <p className="text-sm font-medium text-gray-700">Informations de paiement</p>
+          <p className="text-sm font-medium text-gray-700">
+            Numéro {selectedProvider?.label}
+          </p>
           <input
-            placeholder="Numéro de carte"
+            type="tel"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value.replace(/[^\d+\s]/g, ""))}
+            placeholder="+225 07 00 00 00 00"
             className="w-full px-3 py-2.5 rounded-xl bg-gray-50 border border-gray-200 outline-none focus:border-blue-400 text-sm"
           />
-          <div className="grid grid-cols-2 gap-3">
-            <input
-              placeholder="MM/AA"
-              className="px-3 py-2.5 rounded-xl bg-gray-50 border border-gray-200 outline-none focus:border-blue-400 text-sm"
-            />
-            <input
-              placeholder="CVV"
-              className="px-3 py-2.5 rounded-xl bg-gray-50 border border-gray-200 outline-none focus:border-blue-400 text-sm"
-            />
-          </div>
           <div className="flex items-center gap-1.5 text-xs text-gray-400">
             <ShieldCheck className="w-3.5 h-3.5 text-green-500" />
-            Paiement chiffré et sécurisé
+            Vous recevrez une demande de confirmation sur votre téléphone
           </div>
         </div>
       )}
@@ -1165,15 +1377,16 @@ function PaymentModule({
       </div>
 
       <button
-        onClick={onPay}
-        className="w-full py-3 rounded-xl text-white font-medium"
+        onClick={() => onPay(payMethod)}
+        disabled={isMobileMoney && !phone.trim()}
+        className="w-full py-3 rounded-xl text-white font-medium disabled:opacity-50 transition"
         style={{ backgroundColor: "#1A3072" }}
       >
         {payMethod === "cash"
           ? mode === "delivery"
             ? "Confirmer — Payer à la livraison"
             : "Confirmer — Payer au retrait"
-          : "Payer maintenant →"}
+          : `Payer avec ${selectedProvider?.label} →`}
       </button>
 
       {/* Phone contact */}
@@ -1690,10 +1903,227 @@ function HomeTab({
   );
 }
 
+// ── Détail d'une ordonnance (vue patient) ────────────────────────────────────
+
+const SPECIALITE_LABELS: Record<string, string> = {
+  GENERALISTE: "Médecin généraliste",
+  CARDIOLOGUE: "Cardiologue",
+  DERMATOLOGUE: "Dermatologue",
+  PEDIATRE: "Pédiatre",
+  GYNECOLOGUE: "Gynécologue",
+  NEUROLOGUE: "Neurologue",
+  OPHTALMOLOGUE: "Ophtalmologue",
+  ORL: "ORL",
+  PNEUMOLOGUE: "Pneumologue",
+  AUTRE: "Médecin",
+};
+
+const MED_CARD_COLORS = ["#1A3072", "#059669", "#F47920", "#7C3AED", "#DC2626"];
+
+function OrdonnanceDetailModal({
+  ordonnance,
+  patientName,
+  onClose,
+  onOrderFromOrdonnance,
+}: {
+  ordonnance: OrdonnanceAPI;
+  patientName: string;
+  onClose: () => void;
+  onOrderFromOrdonnance?: (drugs: string[], ordonnanceId: string) => void;
+}) {
+  const isMedecin = ordonnance.source === "MEDECIN";
+  const dateLabel = new Date(ordonnance.createdAt).toLocaleDateString("fr-FR", {
+    day: "2-digit", month: "long", year: "numeric",
+  });
+  const specialiteLabel = ordonnance.medecinSpecialite
+    ? (SPECIALITE_LABELS[ordonnance.medecinSpecialite] ?? ordonnance.medecinSpecialite)
+    : null;
+  const drugNames = isMedecin
+    ? ordonnance.lignes.map((l) => l.medicament.nomCommercial)
+    : ordonnance.medicamentsOcr.map((m) => m.medicament.nomCommercial);
+
+  const handleShare = async () => {
+    const text = `Ordonnance du ${dateLabel}` + (isMedecin ? ` — Dr. ${ordonnance.medecinPrenom} ${ordonnance.medecinNom}` : "");
+    if (navigator.share) {
+      try { await navigator.share({ title: "Mon ordonnance", text }); } catch { /* annulé par l'utilisateur */ }
+    } else {
+      try {
+        await navigator.clipboard.writeText(text);
+        alert("Résumé de l'ordonnance copié dans le presse-papiers.");
+      } catch { /* presse-papiers indisponible */ }
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 bg-white flex flex-col">
+      {/* Header */}
+      <div className="flex items-center justify-between px-4 py-4 border-b border-gray-100 shrink-0">
+        <button onClick={onClose} className="p-1.5 -ml-1.5 rounded-full hover:bg-gray-100">
+          <ChevronLeft className="w-5 h-5 text-gray-700" />
+        </button>
+        <h2 className="text-base font-bold text-gray-900">Mon ordonnance</h2>
+        <button onClick={() => window.print()} title="Télécharger / imprimer" className="p-1.5 -mr-1.5 rounded-full hover:bg-gray-100">
+          <Download className="w-5 h-5 text-gray-700" />
+        </button>
+      </div>
+
+      <div className="flex-1 min-h-0 overflow-y-auto px-5 py-5 space-y-5">
+        {/* Patient + statut */}
+        <div className="flex items-center gap-3">
+          <div
+            className="w-12 h-12 rounded-full flex items-center justify-center shrink-0 text-white font-bold"
+            style={{ backgroundColor: "#1A3072" }}
+          >
+            {patientName.charAt(0) || "P"}
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="font-bold text-gray-900 truncate">{patientName || "Patient"}</p>
+            <p className="text-xs text-gray-400 mt-0.5">Ordonnance du {dateLabel}</p>
+          </div>
+          {isMedecin && (
+            <span
+              className="text-xs font-semibold px-3 py-1 rounded-full shrink-0"
+              style={{ backgroundColor: "#DCFCE7", color: "#059669" }}
+            >
+              Valide
+            </span>
+          )}
+        </div>
+
+        {/* Médicaments prescrits */}
+        <div>
+          <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">
+            Médicaments prescrits
+          </p>
+          <div className="space-y-3">
+            {isMedecin ? (
+              ordonnance.lignes.map((l, i) => (
+                <div key={l.id} className="bg-white rounded-2xl border border-gray-100 p-4">
+                  <div className="flex items-start gap-3">
+                    <div
+                      className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 text-white text-xs font-bold"
+                      style={{ backgroundColor: MED_CARD_COLORS[i % MED_CARD_COLORS.length] }}
+                    >
+                      {i + 1}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-bold text-gray-900">
+                        {l.medicament.nomCommercial} {l.medicament.dosage}
+                      </p>
+                      <p className="text-xs text-gray-400 mt-0.5">{l.medicament.forme}</p>
+                      <div className="mt-2.5 space-y-1.5 text-sm text-gray-600">
+                        <p className="flex items-center gap-2">
+                          <Package className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+                          {l.quantite} {l.medicament.forme.toLowerCase()}(s)
+                        </p>
+                        {l.posologie && (
+                          <p className="flex items-center gap-2">
+                            <Clock className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+                            {l.posologie}
+                          </p>
+                        )}
+                        {l.duree && (
+                          <p className="flex items-center gap-2">
+                            <Calendar className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+                            Durée : {l.duree}
+                          </p>
+                        )}
+                        {l.instructions && (
+                          <p className="flex items-center gap-2">
+                            <Info className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+                            {l.instructions}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))
+            ) : ordonnance.medicamentsOcr.length > 0 ? (
+              ordonnance.medicamentsOcr.map((m, i) => (
+                <div key={m.id} className="bg-white rounded-2xl border border-gray-100 p-4 flex items-center gap-3">
+                  <div
+                    className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 text-white text-xs font-bold"
+                    style={{ backgroundColor: MED_CARD_COLORS[i % MED_CARD_COLORS.length] }}
+                  >
+                    {i + 1}
+                  </div>
+                  <div>
+                    <p className="font-semibold text-gray-900">
+                      {m.medicament.nomCommercial} {m.medicament.dosage}
+                    </p>
+                    <p className="text-xs text-gray-400">{m.quantite}</p>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <p className="text-sm text-gray-400 text-center py-4">
+                {ordonnance.statut === "EN_ATTENTE_OCR" ? "Analyse en cours…" : "Aucun médicament détecté."}
+              </p>
+            )}
+          </div>
+        </div>
+
+        {/* Important */}
+        <div className="flex items-start gap-2.5 px-4 py-3 rounded-2xl bg-amber-50 text-amber-700 text-xs">
+          <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+          <p>
+            <strong>Important :</strong> Respectez la posologie et la durée prescrites. En cas
+            d'effets indésirables, consultez votre médecin.
+          </p>
+        </div>
+
+        {/* Médecin */}
+        {isMedecin && (
+          <div className="flex items-center gap-3 px-4 py-3 rounded-2xl border border-gray-100">
+            <div
+              className="w-10 h-10 rounded-full flex items-center justify-center shrink-0"
+              style={{ backgroundColor: "#EEF1F8" }}
+            >
+              <Stethoscope className="w-5 h-5" style={{ color: "#1A3072" }} />
+            </div>
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-gray-900 truncate">
+                Dr. {ordonnance.medecinPrenom} {ordonnance.medecinNom}
+              </p>
+              {specialiteLabel && <p className="text-xs text-gray-400">{specialiteLabel}</p>}
+              {ordonnance.medecinNumeroOrdre && (
+                <p className="text-[11px] text-gray-400">N° Ordre : {ordonnance.medecinNumeroOrdre}</p>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Actions */}
+      <div className="px-5 py-4 border-t border-gray-100 space-y-2 shrink-0">
+        {onOrderFromOrdonnance && drugNames.length > 0 && (
+          <button
+            onClick={() => { onOrderFromOrdonnance(drugNames, ordonnance.id); onClose(); }}
+            className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl text-white font-semibold text-sm transition active:scale-[0.98]"
+            style={{ backgroundColor: "#059669" }}
+          >
+            <Send className="w-4 h-4" />
+            Envoyer à la pharmacie
+          </button>
+        )}
+        <button
+          onClick={handleShare}
+          className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl border border-gray-200 text-gray-700 font-semibold text-sm hover:bg-gray-50 transition"
+        >
+          <Share2 className="w-4 h-4" />
+          Partager l'ordonnance
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ── Suivi (dashboard) tab ─────────────────────────────────────────────────────
 
-function SuiviTab({ prescriptions, patientName, patientData, rappels, onOrderFromOrdonnance, onToggleRappel, onAddRappel, onDeleteRappel, onUpdateMesures }: {
+function SuiviTab({ prescriptions, rawOrdonnances, patientName, patientData, rappels, onOrderFromOrdonnance, onToggleRappel, onAddRappel, onDeleteRappel, onUpdateMesures }: {
   prescriptions: PrescriptionDisplay[];
+  rawOrdonnances: OrdonnanceAPI[];
   patientName: string;
   patientData: PatientAPI | null;
   rappels: RappelAPI[];
@@ -1703,6 +2133,7 @@ function SuiviTab({ prescriptions, patientName, patientData, rappels, onOrderFro
   onDeleteRappel: (id: string) => void;
   onUpdateMesures: (m: { rythmeCardiaque?: number; tensionSystolique?: number; tensionDiastolique?: number; poids?: number; glycemie?: number }) => Promise<void>;
 }) {
+  const [selectedOrdonnanceId, setSelectedOrdonnanceId] = useState<string | null>(null);
   const [editMesures, setEditMesures] = useState(false);
   const [mRC, setMRC] = useState("");
   const [mSys, setMSys] = useState("");
@@ -2009,7 +2440,11 @@ function SuiviTab({ prescriptions, patientName, patientData, rappels, onOrderFro
             </div>
           ) : (
             prescriptions.map((p) => (
-              <div key={p.id} className="bg-white rounded-2xl border border-gray-100 p-4">
+              <div
+                key={p.id}
+                onClick={() => setSelectedOrdonnanceId(p.id)}
+                className="bg-white rounded-2xl border border-gray-100 p-4 cursor-pointer hover:border-blue-200 hover:shadow-sm transition"
+              >
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex items-center gap-3">
                     <div
@@ -2023,19 +2458,22 @@ function SuiviTab({ prescriptions, patientName, patientData, rappels, onOrderFro
                       <p className="text-xs text-gray-400 mt-0.5">Émise le {p.date}</p>
                     </div>
                   </div>
-                  <span
-                    className="text-[10px] px-2.5 py-1 rounded-full font-semibold shrink-0"
-                    style={p.active
-                      ? { backgroundColor: "#DCFCE7", color: "#059669" }
-                      : { backgroundColor: "#F3F4F6", color: "#9CA3AF" }
-                    }
-                  >
-                    {p.active ? "Active" : "En attente"}
-                  </span>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <span
+                      className="text-[10px] px-2.5 py-1 rounded-full font-semibold"
+                      style={p.active
+                        ? { backgroundColor: "#DCFCE7", color: "#059669" }
+                        : { backgroundColor: "#F3F4F6", color: "#9CA3AF" }
+                      }
+                    >
+                      {p.active ? "Active" : "En attente"}
+                    </span>
+                    <ChevronRight className="w-4 h-4 text-gray-300" />
+                  </div>
                 </div>
                 {onOrderFromOrdonnance && (
                   <button
-                    onClick={() => onOrderFromOrdonnance(p.drugs ?? [], p.id)}
+                    onClick={(e) => { e.stopPropagation(); onOrderFromOrdonnance(p.drugs ?? [], p.id); }}
                     className="mt-3 w-full py-2 rounded-xl text-white text-xs font-semibold"
                     style={{ backgroundColor: "#1A3072" }}
                   >
@@ -2059,6 +2497,20 @@ function SuiviTab({ prescriptions, patientName, patientData, rappels, onOrderFro
           )}
         </div>
       </div>
+
+      {/* ── Détail ordonnance ── */}
+      {selectedOrdonnanceId && (() => {
+        const ordonnance = rawOrdonnances.find((o) => o.id === selectedOrdonnanceId);
+        if (!ordonnance) return null;
+        return (
+          <OrdonnanceDetailModal
+            ordonnance={ordonnance}
+            patientName={patientName}
+            onClose={() => setSelectedOrdonnanceId(null)}
+            onOrderFromOrdonnance={onOrderFromOrdonnance}
+          />
+        );
+      })()}
 
     </div>
   );
@@ -2240,7 +2692,6 @@ export function PatientSpace({ onLogout, userId }: Props) {
   const [patientData, setPatientData] = useState<PatientAPI | null>(null);
   const [rappels, setRappels] = useState<RappelAPI[]>([]);
   const [deliveryAddress, setDeliveryAddress] = useState("");
-  const [paymentMethod, setPaymentMethod] = useState<"cash" | "card">("cash");
 
   const unreadCount = notifications.filter((n) => !n.read).length;
 
@@ -2335,18 +2786,12 @@ export function PatientSpace({ onLogout, userId }: Props) {
     );
   }, []);
 
-  // Conversion PharmacieAPI → Pharmacy (type local du composant)
-  // Pharmacie backend n'a pas de champ "disponible" → on considère ouvert par défaut
-  const apiPharmacies: Pharmacy[] = pharmaciesApi_.map((p) => ({
-    id: p.id,
-    name: p.nom,
-    address: p.adresse,
-    distanceKm: p.distanceKm ?? undefined,
-    open: true,
-    delivery: p.livraisonActive,
-    pickup: true,
-    available: "unknown" as const,
-  }));
+  // Conversion PharmacieAPI → Pharmacy (type local du composant) — distance recalculée côté
+  // client (voir toPharmacyCard) car le backend ne la renvoie pas dans le JSON, seulement
+  // triée en SQL. Sans position connue, on retombe sur l'ordre déjà trié par le serveur.
+  const apiPharmacies: Pharmacy[] = pharmaciesApi_
+    .map((p) => toPharmacyCard(p, userLocation ?? undefined))
+    .sort((a, b) => (a.distanceKm ?? Infinity) - (b.distanceKm ?? Infinity));
 
   // Pharmacies ayant réellement répondu (avec prix) à la demande en cours — préférées à la
   // liste générique "à proximité" dès qu'elles existent, pour que la commande créée ensuite
@@ -2360,7 +2805,7 @@ export function PatientSpace({ onLogout, userId }: Props) {
             id: r.pharmacieId ?? r.id,
             name: r.pharmacieNom ?? full?.nom ?? "Pharmacie",
             address: r.pharmacieAdresse ?? full?.adresse ?? "",
-            distanceKm: full?.distanceKm ?? undefined,
+            distanceKm: full && userLocation ? haversineKm(userLocation, { lat: full.latitude, lng: full.longitude }) : undefined,
             open: true,
             delivery: full?.livraisonActive ?? false,
             pickup: true,
@@ -2368,6 +2813,7 @@ export function PatientSpace({ onLogout, userId }: Props) {
             prix: r.prix,
           };
         })
+        .sort((a, b) => (a.distanceKm ?? Infinity) - (b.distanceKm ?? Infinity))
     : [];
 
   // Conversion DemandeAPI → OrderDisplay
@@ -2387,14 +2833,42 @@ export function PatientSpace({ onLogout, userId }: Props) {
     total: "–",
   }));
 
-  // Conversion OrdonnanceAPI → PrescriptionDisplay
+  // Bouton "localisation" du header : commune connue la plus proche de la position réelle
+  // du patient (fallback "Abidjan" tant que la géoloc n'est pas encore connue).
+  const currentCityLabel = useMemo(() => nearestCommune(userLocation), [userLocation]);
+
+  // "Récents" (SearchModule) : vrais termes recherchés par CE patient, déduits de ses demandes
+  // (medicamentRecherche), les plus récentes en premier, sans doublon. Remplace l'ancienne
+  // liste statique codée en dur.
+  const recentSearches = useMemo(() => {
+    const seen = new Set<string>();
+    const out: string[] = [];
+    const parDateDesc = [...apiDemandes].sort(
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
+    for (const d of parDateDesc) {
+      const terme = d.medicamentRecherche?.trim();
+      if (terme && !seen.has(terme)) {
+        seen.add(terme);
+        out.push(terme);
+      }
+      if (out.length >= 5) break;
+    }
+    return out;
+  }, [apiDemandes]);
+
+  // Conversion OrdonnanceAPI → PrescriptionDisplay (résumé pour la carte de liste ; le détail
+  // complet — posologie, durée, instructions par médicament — vient de `apiOrdonnances` brut,
+  // consulté au clic sur la carte).
   const apiPresDisplays: PrescriptionDisplay[] = apiOrdonnances.map((o) => ({
     id: o.id,
-    doctor: "Dr. Médecin traitant",
+    doctor: o.medecinNom ? `Dr. ${o.medecinPrenom ?? ""} ${o.medecinNom}`.trim() : "Ordonnance envoyée",
     date: new Date(o.createdAt).toLocaleDateString("fr-FR"),
     expires: "–",
     active: o.statut !== "EN_ATTENTE_OCR",
-    drugs: o.medicaments ?? [],
+    drugs: o.source === "MEDECIN"
+      ? o.lignes.map((l) => l.medicament.nomCommercial)
+      : o.medicamentsOcr.map((m) => m.medicament.nomCommercial),
   }));
 
   // Whether we're in the middle of the checkout flow (not home search, not tracking)
@@ -2442,7 +2916,7 @@ export function PatientSpace({ onLogout, userId }: Props) {
     if (userId && q) {
       // Zone explicite (commune choisie ou position actuelle activée dans le module de recherche),
       // sinon la position déjà connue du patient en fallback.
-      const communeCoords = zone?.commune ? ABIDJAN_COMMUNES[zone.commune] : null;
+      const communeCoords = zone?.commune ? VILLES_CI[zone.commune] : null;
       const coords = communeCoords ?? (zone?.useCurrentLocation ? userLocation : null) ?? userLocation;
       try {
         const d = await demandesApi.create({
@@ -2486,7 +2960,13 @@ export function PatientSpace({ onLogout, userId }: Props) {
     setStep("pharmacies");
   };
 
-  const handleSelectPharmacy = (p: Pharmacy) => {
+  // q : nom du médicament tapé avant la sélection directe d'une pharmacie proche (facultatif —
+  // le patient peut choisir une pharmacie sans avoir rien recherché, cf. flux position/commune).
+  const handleSelectPharmacy = (p: Pharmacy, q?: string) => {
+    if (q) {
+      setQuery(q);
+      setItems([q]);
+    }
     setSelectedPharmacy(p);
     setStep("mode");
   };
@@ -2501,7 +2981,7 @@ export function PatientSpace({ onLogout, userId }: Props) {
     setStep("payment");
   };
 
-  const handlePay = async (method: "cash" | "card" = paymentMethod) => {
+  const handlePay = async (method: PayMethod) => {
     setOrderStep("confirmed");
     setStep("tracking");
 
@@ -2520,7 +3000,7 @@ export function PatientSpace({ onLogout, userId }: Props) {
           demandeId: dId,
           pharmacieId: selectedPharmacy.id,
           modeObtention: isDelivery ? "LIVRAISON" : "RETRAIT",
-          modePaiement: method === "card" ? "EN_LIGNE" : "A_LA_LIVRAISON",
+          modePaiement: method === "cash" ? "A_LA_LIVRAISON" : method,
           medicamentIds: [],
         });
         setCommande(c);
@@ -2625,7 +3105,7 @@ export function PatientSpace({ onLogout, userId }: Props) {
           {/* Location */}
           <button className="hidden sm:flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700">
             <Navigation2 className="w-4 h-4 text-green-500" />
-            Abidjan
+            {currentCityLabel}
           </button>
 
           {/* Right actions */}
@@ -2676,7 +3156,7 @@ export function PatientSpace({ onLogout, userId }: Props) {
         <div className="flex items-center gap-2">
           <button className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700">
             <Navigation2 className="w-4 h-4 text-green-500" />
-            Abidjan
+            {currentCityLabel}
           </button>
           <button
             onClick={() => setNotifOpen(true)}
@@ -2714,8 +3194,10 @@ export function PatientSpace({ onLogout, userId }: Props) {
               onSearch={handleSearch}
               onPrescription={() => setPrescriptionOpen(true)}
               nearbyPharmacies={apiPharmacies}
+              onSelectPharmacy={handleSelectPharmacy}
               onShowMap={() => setMapOpen(true)}
               onGoHome={() => setTab("home")}
+              recentSearches={recentSearches}
             />
           )}
           {step === "pharmacies" && (
@@ -2726,6 +3208,7 @@ export function PatientSpace({ onLogout, userId }: Props) {
               onSelect={handleSelectPharmacy}
               onBack={() => setStep("search")}
               onShowMap={() => setMapOpen(true)}
+              cityLabel={currentCityLabel}
             />
           )}
           {step === "mode" && selectedPharmacy && (
@@ -2767,82 +3250,9 @@ export function PatientSpace({ onLogout, userId }: Props) {
       {/* ── Tab: Tableau de bord ── */}
       {tab === "dashboard" && (
         <div>
-          {/* ── Mes demandes ── */}
-          {apiDemandes.length > 0 && (
-            <div className="px-4 pt-5 pb-2">
-              <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">Mes demandes</p>
-              <div className="space-y-3">
-                {apiDemandes.slice(0, 5).map((d) => {
-                  const reponses = demandeReponses[d.id] ?? [];
-                  const repondues = reponses.filter((r) => r.reponse);
-                  const disponibles = repondues.filter((r) => r.reponse === "DISPONIBLE" || r.reponse === "PARTIEL");
-                  return (
-                    <div key={d.id} className="bg-white rounded-2xl border border-gray-100 p-4">
-                      <div className="flex items-start justify-between gap-2 mb-2">
-                        <div className="flex items-center gap-2">
-                          <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: "#EEF1F8" }}>
-                            <Pill className="w-4 h-4" style={{ color: "#1A3072" }} />
-                          </div>
-                          <div>
-                            <p className="text-sm font-semibold text-gray-900">
-                              {d.medicamentRecherche ?? (d.type === "ORDONNANCE" ? "Ordonnance" : "Médicament")}
-                            </p>
-                            <p className="text-xs text-gray-400">{new Date(d.createdAt).toLocaleDateString("fr-FR")}</p>
-                          </div>
-                        </div>
-                        <span className="text-[10px] px-2 py-1 rounded-full font-semibold shrink-0"
-                          style={repondues.length > 0
-                            ? { backgroundColor: "#DCFCE7", color: "#059669" }
-                            : { backgroundColor: "#FEF3C7", color: "#D97706" }
-                          }>
-                          {repondues.length > 0 ? `${repondues.length} réponse(s)` : "En attente"}
-                        </span>
-                      </div>
-                      {repondues.length > 0 ? (
-                        <div className="space-y-1.5">
-                          {repondues.map((r) => (
-                            <div key={r.id} className="flex items-center gap-2 px-3 py-2 rounded-xl bg-gray-50">
-                              <div className="w-2 h-2 rounded-full shrink-0"
-                                style={{ backgroundColor: r.reponse === "DISPONIBLE" ? "#10B981" : r.reponse === "PARTIEL" ? "#F59E0B" : "#EF4444" }} />
-                              <p className="text-xs font-medium text-gray-700 flex-1 truncate">{r.pharmacieNom ?? "Pharmacie"}</p>
-                              <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold shrink-0"
-                                style={r.reponse === "DISPONIBLE"
-                                  ? { backgroundColor: "#DCFCE7", color: "#059669" }
-                                  : r.reponse === "PARTIEL"
-                                  ? { backgroundColor: "#FEF3C7", color: "#D97706" }
-                                  : { backgroundColor: "#FEE2E2", color: "#EF4444" }
-                                }>
-                                {r.reponse === "DISPONIBLE" ? "Disponible" : r.reponse === "PARTIEL" ? "Partiel" : "Non dispo."}
-                              </span>
-                            </div>
-                          ))}
-                          {disponibles.length > 0 && (
-                            <button
-                              onClick={() => {
-                                setDemandeId(d.id);
-                                setQuery(d.medicamentRecherche ?? "");
-                                setItems(d.medicamentRecherche ? [d.medicamentRecherche] : []);
-                                setTab("search");
-                                setStep("pharmacies");
-                              }}
-                              className="w-full mt-1 py-2 rounded-xl text-white text-xs font-semibold"
-                              style={{ backgroundColor: "#1A3072" }}
-                            >
-                              Commander auprès d'une pharmacie →
-                            </button>
-                          )}
-                        </div>
-                      ) : (
-                        <p className="text-xs text-gray-400 text-center py-1">En attente des réponses des pharmacies…</p>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
           <SuiviTab
             prescriptions={apiPresDisplays}
+            rawOrdonnances={apiOrdonnances}
             patientName={patientName}
             patientData={patientData}
             rappels={rappels}

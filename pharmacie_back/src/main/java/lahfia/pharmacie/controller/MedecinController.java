@@ -43,6 +43,13 @@ public class MedecinController {
     public ResponseEntity<List<Medecin>> getAll() {
         return ResponseEntity.ok(medecinService.findAll());
     }
+
+    /** DELETE /api/v1/medecins/{id} — suppression admin. */
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> supprimer(@PathVariable UUID id) {
+        medecinService.supprimer(id);
+        return ResponseEntity.noContent().build();
+    }
     
     /**
      * POST /api/v1/medecins/inscription

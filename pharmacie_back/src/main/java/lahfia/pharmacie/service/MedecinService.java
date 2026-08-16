@@ -184,4 +184,11 @@ public class MedecinService {
     public List<Medecin> findAll() {
     return medecinRepository.findAll();
 }
+
+    /** Suppression admin. Échoue proprement (géré par GlobalExceptionHandler) si des données liées bloquent la contrainte. */
+    @Transactional
+    public void supprimer(UUID id) {
+        findById(id);
+        medecinRepository.deleteById(id);
+    }
 }

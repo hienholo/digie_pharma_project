@@ -7,6 +7,7 @@ import org.hibernate.annotations.CreationTimestamp;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -64,4 +65,19 @@ public class Ordonnance {
     @OneToMany(mappedBy = "ordonnance", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @Builder.Default
     private List<LigneOrdonnance> lignes = new ArrayList<>();
+
+    // Le champ "medecin" ci-dessus est exclu du JSON par @JsonBackReference (évite la boucle
+    // avec Medecin.ordonnances). Ces getters calculés exposent les infos utiles à l'affichage
+    // patient (vue détail d'ordonnance) sans casser la sérialisation.
+    @JsonProperty("medecinNom")
+    public String getMedecinNom() { return medecin != null ? medecin.getNom() : null; }
+
+    @JsonProperty("medecinPrenom")
+    public String getMedecinPrenom() { return medecin != null ? medecin.getPrenom() : null; }
+
+    @JsonProperty("medecinSpecialite")
+    public String getMedecinSpecialite() { return medecin != null && medecin.getSpecialite() != null ? medecin.getSpecialite().name() : null; }
+
+    @JsonProperty("medecinNumeroOrdre")
+    public String getMedecinNumeroOrdre() { return medecin != null ? medecin.getNumeroOrdre() : null; }
 }

@@ -88,6 +88,7 @@ public class GlobalExceptionHandler {
         String cause = ex.getMostSpecificCause().getMessage();
         if (cause == null) return "Cette valeur existe déjà ou un champ requis est vide.";
         String lower = cause.toLowerCase();
+        if (lower.contains("foreign key")) return "Impossible de supprimer : des données sont encore rattachées à ce compte.";
         if (lower.contains("email"))           return "Cet email est déjà utilisé.";
         if (lower.contains("telephone"))       return "Ce numéro de téléphone est déjà utilisé.";
         if (lower.contains("numero_ordre"))    return "Ce numéro d'ordre médecin est déjà enregistré.";

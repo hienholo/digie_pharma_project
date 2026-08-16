@@ -62,7 +62,7 @@ public class Livraison {
     private LocalDateTime createdAt;
 
     @JsonManagedReference("livraison-evaluation")
-    @OneToOne(mappedBy = "livraison", fetch = FetchType.LAZY)
+    @OneToOne(mappedBy = "livraison", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     private EvaluationLivreur evaluation;
 
     @JsonProperty("commandeId")

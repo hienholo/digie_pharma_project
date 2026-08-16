@@ -7,10 +7,12 @@ import org.springframework.web.server.ResponseStatusException;
 
 import lahfia.pharmacie.dto.LoginRequest;
 import lahfia.pharmacie.dto.LoginResponse;
+import lahfia.pharmacie.models.Admin;
 import lahfia.pharmacie.models.Livreur;
 import lahfia.pharmacie.models.Medecin;
 import lahfia.pharmacie.models.Patient;
 import lahfia.pharmacie.models.Pharmacie;
+import lahfia.pharmacie.repository.AdminRepository;
 import lahfia.pharmacie.repository.LivreurRepository;
 import lahfia.pharmacie.repository.MedecinRepository;
 import lahfia.pharmacie.repository.PatientRepository;
@@ -26,6 +28,7 @@ public class AuthService {
     private final MedecinRepository medecinRepository;
     private final PharmacieRepository pharmacieRepository;
     private final LivreurRepository livreurRepository;
+    private final AdminRepository adminRepository;
 
     private static final String ERR = "Email ou mot de passe incorrect.";
 
@@ -38,8 +41,16 @@ public class AuthService {
             case "MEDECIN" -> loginMedecin(req);
             case "PHARMACIE" -> loginPharmacie(req);
             case "LIVREUR" -> loginLivreur(req);
+            case "ADMIN" -> loginAdmin(req);
             default -> throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Rôle inconnu : " + req.role());
         };
+    }
+
+    private LoginResponse loginAdmin(LoginRequest req) {
+        Admin a = adminRepository.findByEmail(req.email())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, ERR));
+        verifyPassword(req.password(), a.getPasswordHash());
+        return new LoginResponse(a.getId().toString(), "ADMIN", a.getNom(), null);
     }
 
     private LoginResponse loginPatient(LoginRequest req) {

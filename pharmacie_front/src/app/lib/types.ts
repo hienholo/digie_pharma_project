@@ -130,14 +130,29 @@ export interface MedicamentAPI {
   forme: string;
 }
 
+// Médicament OCR-détecté sur une ordonnance photo (flux upload patient).
+export interface OrdonnanceMedicamentAPI {
+  id: string;
+  medicament: MedicamentAPI;
+  quantite: string;
+  corrigeManuellement: boolean;
+}
+
 export interface OrdonnanceAPI {
   id: string;
-  patientId: string;
-  imageUrl: string;
-  statut: "EN_ATTENTE_OCR" | "ANALYSEE" | "CORRIGEE";
-  medicaments: string[];
-  corrigeManuellement: boolean;
+  imageUrl?: string;
+  // UPLOAD : photo/scan soumis par le patient (OCR) — MEDECIN : rédigée par un médecin.
+  source: "UPLOAD" | "MEDECIN";
+  statut: "EN_ATTENTE_OCR" | "ANALYSEE" | "CORRIGEE" | "NUMERIQUE";
   createdAt: string;
+  medicamentsOcr: OrdonnanceMedicamentAPI[];
+  // Lignes rédigées par le médecin (posologie/durée/instructions) — vide pour source=UPLOAD.
+  lignes: LigneOrdonnanceAPI[];
+  // Coordonnées du médecin auteur — présentes seulement si source=MEDECIN.
+  medecinNom?: string;
+  medecinPrenom?: string;
+  medecinSpecialite?: string;
+  medecinNumeroOrdre?: string;
 }
 
 export interface DemandeAPI {
@@ -271,6 +286,23 @@ export interface LoginResponse {
   prenom: string | null;
 }
 
+export interface AdminStatsAPI {
+  totalPatients: number;
+  totalPharmacies: number;
+  pharmaciesLivraisonActive: number;
+  totalLivreurs: number;
+  livreursActifs: number;
+  livreursEnAttente: number;
+  livreursSuspendus: number;
+  totalMedecins: number;
+  medecinsActifs: number;
+  medecinsEnAttente: number;
+  medecinsSuspendus: number;
+  totalDemandes: number;
+  totalCommandes: number;
+  totalLivraisons: number;
+}
+
 export interface CreatePatientPayload {
   nom: string;
   prenom: string;
@@ -295,6 +327,6 @@ export interface CreateCommandePayload {
   demandeId: string;
   pharmacieId: string;
   modeObtention: "LIVRAISON" | "RETRAIT";
-  modePaiement: "A_LA_LIVRAISON" | "EN_LIGNE";
+  modePaiement: "A_LA_LIVRAISON" | "WAVE" | "ORANGE_MONEY" | "MTN_MONEY" | "EN_LIGNE";
   medicamentIds: string[];
 }
